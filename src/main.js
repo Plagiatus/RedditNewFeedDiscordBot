@@ -20,7 +20,7 @@ async function start() {
     await exports.db.connect();
     await exports.client.login(exports.data.config.botToken);
     await updateSlashCommands();
-    setInterval(updateRedditFeeds, 5 * 60 * 1000);
+    setInterval(updateRedditFeeds, exports.data.config.refreshIntervall * 60 * 1000);
     updateRedditFeeds();
 }
 start();

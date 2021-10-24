@@ -16,7 +16,7 @@ async function start() {
 	await client.login(data.config.botToken);
 	await updateSlashCommands();
 	
-	setInterval(updateRedditFeeds, 5 * 60 * 1000);
+	setInterval(updateRedditFeeds, data.config.refreshIntervall * 60 * 1000);
 	updateRedditFeeds();
 }
 start();
