@@ -13,7 +13,7 @@ module.exports = {
 			.addFields([
 				{name: "Questions", value: "If you have any questions, feel free to [contact the creator](https://plagiatus.net#contact)", inline: false},
 				{name: "Issues", value: "Please report any issues [here](https://github.com/Plagiatus/RedditNewFeedDiscordBot/issues)", inline: false},
-				{name: "I want this bot in my server!", value: "To add the bot to your server, [click here](https://discord.com/api/oauth2/authorize?client_id=900766304628244490&scope=applications.commands%20bot&permissions=2048)", inline: false},
+				{name: "I want this bot in my server!", value: "To add the bot to your server, [click here](https://discord.com/api/oauth2/authorize?client_id=900766304628244490&scope=applications.commands%20bot&permissions=51200)", inline: false},
 				// {name: "", value: "", inline: false},
 				// {name: "", value: "", inline: false},
 			])
