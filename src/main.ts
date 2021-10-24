@@ -117,6 +117,7 @@ async function updateRedditFeeds() {
 					await channel.send({embeds: [embed]});
 				}
 			} catch (error) {
+				console.log(error);
 				continue;
 			}
 		}
@@ -154,7 +155,7 @@ function postEmbed(post: Post, user?: RedditUser, subreddit?: SubredditInfo): Di
 	.setFooter(`r/${post.data.subreddit}`, subredditImage)
 	;
 
-	if(post.data.thumbnail)
+	if(post.data.thumbnail && post.data.thumbnail != "self")
 		embed.setThumbnail(post.data.thumbnail)
 	if(post.data.link_flair_background_color)
 		embed.setColor(post.data.link_flair_background_color as Discord.ColorResolvable);
