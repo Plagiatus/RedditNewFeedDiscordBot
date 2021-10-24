@@ -10,9 +10,16 @@ export class Database {
 	constructor() {
 		if (Database.instance) return Database.instance;
 		let options: Mongo.MongoClientOptions = {};
-		let url: string = `mongodb://${data.config.db.user}:${data.config.db.password}@${data.config.db.url}`;
+		let url: string = `mongodb`
+
+		if (data.config.db.isAtlas) {
+			url += "+srv";
+		}
+		url += `://`;
 		if (!data.config.db.user || !data.config.db.password) {
-			url = `mongodb://${data.config.db.url}`;
+			url += data.config.db.url;
+		} else {
+			url += `${data.config.db.user}:${data.config.db.password}@${data.config.db.url}`;
 		}
 		this.client = new Mongo.MongoClient(url, options);
 		this.connected = false;
@@ -31,14 +38,14 @@ export class Database {
 		this.connected = true;
 	}
 
-	async getSubscriptions(): Promise<SubscriptionInfo[]>{
+	async getSubscriptions(): Promise<SubscriptionInfo[]> {
 		let collection = this.getCollection();
 		return collection.find().toArray() as Promise<SubscriptionInfo[]>;
 	}
 
 	async getSubscriptionsInGuild(guild: string): Promise<SubscriptionInfo[]> {
 		let collection = this.getCollection();
-		return collection.find({guilds: {$elemMatch: {guild}}}).toArray() as Promise<SubscriptionInfo[]>;
+		return collection.find({ guilds: { $elemMatch: { guild } } }).toArray() as Promise<SubscriptionInfo[]>;
 	}
 
 	async addSubscription(guild: string, channel: string, subreddit: string): Promise<void> {

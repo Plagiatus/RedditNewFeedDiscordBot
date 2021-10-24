@@ -5,6 +5,7 @@ interface Config {
 		password: string,
 		url: string,
 		name: string,
+		isAtlas: boolean,
 	},
 	refreshIntervall: number
 }

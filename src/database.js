@@ -15,9 +15,16 @@ class Database {
         if (Database.instance)
             return Database.instance;
         let options = {};
-        let url = `mongodb://${main_1.data.config.db.user}:${main_1.data.config.db.password}@${main_1.data.config.db.url}`;
+        let url = `mongodb`;
+        if (main_1.data.config.db.isAtlas) {
+            url += "+srv";
+        }
+        url += `://`;
         if (!main_1.data.config.db.user || !main_1.data.config.db.password) {
-            url = `mongodb://${main_1.data.config.db.url}`;
+            url += main_1.data.config.db.url;
+        }
+        else {
+            url += `${main_1.data.config.db.user}:${main_1.data.config.db.password}@${main_1.data.config.db.url}`;
         }
         this.client = new Mongo.MongoClient(url, options);
         this.connected = false;
