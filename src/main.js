@@ -16,8 +16,8 @@ exports.db = new database_1.Database();
 exports.client = new Discord.Client({ intents: [Discord.Intents.FLAGS.GUILDS] });
 exports.client.on("ready", () => { console.log("[CLIENT] connected"); });
 exports.client.on("interactionCreate", handleInteraction);
-// client.on("guildCreate", handleGuildJoin);
-// client.on("guildDelete", handleGuildLeave);
+exports.client.on("guildCreate", handleGuildJoin);
+exports.client.on("guildDelete", handleGuildLeave);
 async function start() {
     await exports.db.connect();
     await exports.client.login(exports.data.config.botToken);
@@ -57,7 +57,7 @@ async function handleButton(interaction) {
         interaction.reply({ ephemeral: true, content: `There was an error using this button: ${error}. If this problem persists, contact a moderator.` });
     }
 }
-async function updateSlashCommands() {
+async function updateSlashCommands(guild) {
     let commands = [];
     //load new commands
     for (let i of exports.data.interactions.values()) {
@@ -67,44 +67,52 @@ async function updateSlashCommands() {
         newInteraction.defaultPermission = i.defaultPermission;
         commands.push(newInteraction);
     }
-    await exports.client.guilds.fetch();
-    for (let guild of exports.client.guilds.cache.values()) {
-        //refresh commands of guild
-        await guild.commands.fetch();
-        for (let command of guild.commands.cache.values()) {
-            // remove outdated commands
-            let found = false;
-            for (let i of exports.data.interactions.values()) {
-                if (i.data?.name == command.name) {
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                await guild.commands.delete(command.id);
+    if (guild) {
+        await updateSlashCommandsInGuild(guild, commands);
+    }
+    else {
+        await exports.client.guilds.fetch();
+        for (let guild of exports.client.guilds.cache.values()) {
+            await updateSlashCommandsInGuild(guild, commands);
+        }
+        console.log("[CLIENT] Updated slash commands.");
+    }
+}
+async function updateSlashCommandsInGuild(guild, commands) {
+    //refresh commands of guild
+    await guild.commands.fetch();
+    for (let command of guild.commands.cache.values()) {
+        // remove outdated commands
+        let found = false;
+        for (let i of exports.data.interactions.values()) {
+            if (i.data?.name == command.name) {
+                found = true;
+                break;
             }
         }
-        // add/update commands
-        for (let command of commands) {
-            let newCommand = await guild.commands.create(command);
-            //enable mod-only useage
-            if (!newCommand.defaultPermission) {
-                await guild.roles.fetch();
-                const permissions = [];
-                for (let roleId of guild.roles.cache.keys()) {
-                    if (guild.roles.cache.get(roleId)?.permissions.has(Discord.Permissions.FLAGS.MANAGE_CHANNELS)) {
-                        permissions.push({
-                            id: roleId,
-                            type: "ROLE",
-                            permission: true
-                        });
-                    }
-                }
-                await newCommand.permissions.set({ permissions });
-            }
+        if (!found) {
+            await guild.commands.delete(command.id);
         }
     }
-    console.log("[CLIENT] Updated slash commands.");
+    // add/update commands
+    for (let command of commands) {
+        let newCommand = await guild.commands.create(command);
+        //enable mod-only useage
+        if (!newCommand.defaultPermission) {
+            await guild.roles.fetch();
+            const permissions = [];
+            for (let roleId of guild.roles.cache.keys()) {
+                if (guild.roles.cache.get(roleId)?.permissions.has(Discord.Permissions.FLAGS.MANAGE_CHANNELS)) {
+                    permissions.push({
+                        id: roleId,
+                        type: "ROLE",
+                        permission: true
+                    });
+                }
+            }
+            await newCommand.permissions.set({ permissions });
+        }
+    }
 }
 async function updateRedditFeeds() {
     let redditUserCache = new Map();
@@ -132,4 +140,15 @@ async function updateRedditFeeds() {
             }
         }
     }
+}
+async function handleGuildLeave(guild) {
+    console.log("[GUILD] Left:", guild.name);
+    let subscriptions = await exports.db.getSubscriptionsInGuild(guild.id);
+    for (let sub of subscriptions) {
+        await exports.db.removeSubscription(guild.id, sub.subreddit);
+    }
+}
+function handleGuildJoin(guild) {
+    console.log("[GUILD] Joined:", guild.name);
+    updateSlashCommands(guild);
 }
