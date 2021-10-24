@@ -16,6 +16,8 @@ exports.db = new database_1.Database();
 exports.client = new Discord.Client({ intents: [Discord.Intents.FLAGS.GUILDS] });
 exports.client.on("ready", () => { console.log("[CLIENT] connected"); });
 exports.client.on("interactionCreate", handleInteraction);
+// client.on("guildCreate", handleGuildJoin);
+// client.on("guildDelete", handleGuildLeave);
 async function start() {
     await exports.db.connect();
     await exports.client.login(exports.data.config.botToken);
@@ -120,7 +122,7 @@ async function updateRedditFeeds() {
                 if (!channel.isText())
                     continue;
                 for (let post of newPosts) {
-                    let embed = postEmbed(post, await getUser(post.data.author, redditUserCache), await getSubreddit(post.data.subreddit, subredditInfoCache));
+                    let embed = util_1.postEmbed(post, await util_1.getUser(post.data.author, redditUserCache), await util_1.getSubreddit(post.data.subreddit, subredditInfoCache));
                     await channel.send({ embeds: [embed] });
                 }
             }
@@ -130,35 +132,4 @@ async function updateRedditFeeds() {
             }
         }
     }
-}
-async function getUser(name, cache) {
-    let cachedResult = cache.get(name);
-    if (cachedResult)
-        return cachedResult;
-    let newUser = await util_1.getUserInfo(name);
-    cache.set(name, newUser);
-    return newUser;
-}
-async function getSubreddit(name, cache) {
-    let cachedResult = cache.get(name);
-    if (cachedResult)
-        return cachedResult;
-    let newSub = await util_1.getSubredditInfo(name);
-    cache.set(name, newSub);
-    return newSub;
-}
-function postEmbed(post, user, subreddit) {
-    let userImage = util_1.fixImageUrl(user?.data.icon_img);
-    let subredditImage = util_1.fixImageUrl(subreddit?.data.community_icon);
-    let embed = new Discord.MessageEmbed()
-        .setTitle(post.data.title)
-        .setURL(`https://redd.it/${post.data.id}`)
-        .setAuthor(post.data.author, userImage, "https://reddit.com/u/" + post.data.author)
-        .setDescription(post.data.selftext)
-        .setFooter(`r/${post.data.subreddit}`, subredditImage);
-    if (post.data.thumbnail && post.data.thumbnail != "self")
-        embed.setThumbnail(post.data.thumbnail);
-    if (post.data.link_flair_background_color)
-        embed.setColor(post.data.link_flair_background_color);
-    return embed;
 }

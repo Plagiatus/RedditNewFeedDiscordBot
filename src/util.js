@@ -8,6 +8,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const https = __importStar(require("https"));
+const Discord = __importStar(require("discord.js"));
 const main_1 = require("./main");
 async function sendRedditRequest(url) {
     return new Promise((resolve, reject) => {
@@ -84,3 +85,37 @@ function fixImageUrl(url) {
     return urlObj.origin + urlObj.pathname;
 }
 exports.fixImageUrl = fixImageUrl;
+async function getUser(name, cache) {
+    let cachedResult = cache.get(name);
+    if (cachedResult)
+        return cachedResult;
+    let newUser = await getUserInfo(name);
+    cache.set(name, newUser);
+    return newUser;
+}
+exports.getUser = getUser;
+async function getSubreddit(name, cache) {
+    let cachedResult = cache.get(name);
+    if (cachedResult)
+        return cachedResult;
+    let newSub = await getSubredditInfo(name);
+    cache.set(name, newSub);
+    return newSub;
+}
+exports.getSubreddit = getSubreddit;
+function postEmbed(post, user, subreddit) {
+    let userImage = fixImageUrl(user?.data.icon_img);
+    let subredditImage = fixImageUrl(subreddit?.data.community_icon);
+    let embed = new Discord.MessageEmbed()
+        .setTitle(post.data.title)
+        .setURL(`https://redd.it/${post.data.id}`)
+        .setAuthor(post.data.author, userImage, "https://reddit.com/u/" + post.data.author)
+        .setDescription(post.data.selftext)
+        .setFooter(`r/${post.data.subreddit}`, subredditImage);
+    if (post.data.thumbnail && post.data.thumbnail != "self")
+        embed.setThumbnail(post.data.thumbnail);
+    if (post.data.link_flair_background_color)
+        embed.setColor(post.data.link_flair_background_color);
+    return embed;
+}
+exports.postEmbed = postEmbed;

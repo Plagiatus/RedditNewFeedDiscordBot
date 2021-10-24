@@ -2,7 +2,7 @@ import * as https from "https";
 import { Data } from "./data";
 import { Database } from "./database";
 import * as Discord from "discord.js";
-import { checkForNewPosts, fixImageUrl, getSubredditInfo, getUserInfo } from "./util";
+import { checkForNewPosts, fixImageUrl, getSubreddit, getSubredditInfo, getUser, getUserInfo, postEmbed } from "./util";
 
 export const data = new Data();
 export const db = new Database();
@@ -10,6 +10,8 @@ export const client = new Discord.Client({ intents: [Discord.Intents.FLAGS.GUILD
 
 client.on("ready", () => { console.log("[CLIENT] connected") });
 client.on("interactionCreate", handleInteraction);
+// client.on("guildCreate", handleGuildJoin);
+// client.on("guildDelete", handleGuildLeave);
 
 async function start() {
 	await db.connect();
@@ -122,43 +124,4 @@ async function updateRedditFeeds() {
 			}
 		}
 	}
-}
-
-async function getUser(name: string, cache: Map<string, RedditUser>): Promise<RedditUser>{
-	let cachedResult: RedditUser | undefined = cache.get(name);
-	if(cachedResult)
-		return cachedResult;
-
-	let newUser = await getUserInfo(name);
-	cache.set(name, newUser);
-	return newUser;
-}
-async function getSubreddit(name: string, cache: Map<string, SubredditInfo>): Promise<SubredditInfo>{
-	let cachedResult: SubredditInfo | undefined = cache.get(name);
-	if(cachedResult)
-		return cachedResult;
-
-	let newSub = await getSubredditInfo(name);
-	cache.set(name, newSub);
-	return newSub;
-}
-
-function postEmbed(post: Post, user?: RedditUser, subreddit?: SubredditInfo): Discord.MessageEmbed {
-	let userImage: string | undefined = fixImageUrl(user?.data.icon_img);
-	let subredditImage: string | undefined = fixImageUrl(subreddit?.data.community_icon);
-
-	let embed = new Discord.MessageEmbed()
-	.setTitle(post.data.title)
-	.setURL(`https://redd.it/${post.data.id}`)
-	.setAuthor(post.data.author, userImage, "https://reddit.com/u/" + post.data.author)
-	.setDescription(post.data.selftext)
-	.setFooter(`r/${post.data.subreddit}`, subredditImage)
-	;
-
-	if(post.data.thumbnail && post.data.thumbnail != "self")
-		embed.setThumbnail(post.data.thumbnail)
-	if(post.data.link_flair_background_color)
-		embed.setColor(post.data.link_flair_background_color as Discord.ColorResolvable);
-
-	return embed;
 }
