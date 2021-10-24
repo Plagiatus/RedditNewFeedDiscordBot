@@ -1,0 +1,19 @@
+{
+  "name": "redditfeedbot",
+  "version": "0.0.1",
+  "description": "A Discord Bot that sends new posts from a subreddit to a discord",
+  "main": "main.js",
+  "scripts": {
+    "start": "node src/main.js",
+		"db": "D:\\Programme\\MongoDB\\4.0\\bin\\mongod.exe --dbpath ./data"
+  },
+  "author": "Lukas Scheuerle (Plagiatus)",
+  "license": "ISC",
+  "dependencies": {
+    "discord.js": "^13.2.0",
+    "mongodb": "^4.1.3"
+  },
+  "devDependencies": {
+    "@types/node": "^16.11.1"
+  }
+}
