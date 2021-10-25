@@ -97,9 +97,18 @@ export async function getSubreddit(name: string, cache: Map<string, SubredditInf
 export function postEmbed(post: Post, user?: RedditUser, subreddit?: SubredditInfo): Discord.MessageEmbed {
 	let userImage: string | undefined = fixImageUrl(user?.data.icon_img);
 	let subredditImage: string | undefined = fixImageUrl(subreddit?.data.community_icon);
+	let flairText: string = "";
+	for (let richtext of post.data.link_flair_richtext) {
+		if (richtext.e == "text")
+			flairText += richtext.t;
+	}
+	flairText = flairText.trim();
+	if(flairText.length > 0){
+		flairText = "[" + flairText + "] "
+	}
 
 	let embed = new Discord.MessageEmbed()
-		.setTitle(post.data.title)
+		.setTitle(`${flairText}${post.data.title}`)
 		.setURL(`https://redd.it/${post.data.id}`)
 		.setAuthor(post.data.author, userImage, "https://reddit.com/u/" + post.data.author)
 		.setDescription(post.data.selftext)

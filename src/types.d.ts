@@ -71,9 +71,13 @@ interface PostData {
 }
 
 interface FlairRichtext {
+	/** If type is emoji, this the text representation of the emoji in the subreddit */
 	a: string,
+	/** Type of the richtext */
 	e: "emoji" | "text",
+	/** If type is text, this is the text content */
 	t: string,
+	/** If type is emoji, this is the url to the image */
 	u: string
 }
 

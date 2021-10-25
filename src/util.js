@@ -106,8 +106,17 @@ exports.getSubreddit = getSubreddit;
 function postEmbed(post, user, subreddit) {
     let userImage = fixImageUrl(user?.data.icon_img);
     let subredditImage = fixImageUrl(subreddit?.data.community_icon);
+    let flairText = "";
+    for (let richtext of post.data.link_flair_richtext) {
+        if (richtext.e == "text")
+            flairText += richtext.t;
+    }
+    flairText = flairText.trim();
+    if (flairText.length > 0) {
+        flairText = "[" + flairText + "] ";
+    }
     let embed = new Discord.MessageEmbed()
-        .setTitle(post.data.title)
+        .setTitle(`${flairText}${post.data.title}`)
         .setURL(`https://redd.it/${post.data.id}`)
         .setAuthor(post.data.author, userImage, "https://reddit.com/u/" + post.data.author)
         .setDescription(post.data.selftext)
