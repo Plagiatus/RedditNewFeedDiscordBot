@@ -118,6 +118,9 @@ class Database {
         for (let post of posts) {
             postsToInsert.push({ post: post.data.id });
         }
+        if (postsToInsert.length == 0) {
+            postsToInsert.push({ post: "00000" });
+        }
         collection.insertMany(postsToInsert);
     }
 }
