@@ -6,14 +6,19 @@ var __importStar = (this && this.__importStar) || function (mod) {
     result["default"] = mod;
     return result;
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const data_1 = require("./data");
 const database_1 = require("./database");
 const Discord = __importStar(require("discord.js"));
 const util_1 = require("./util");
+const httpserver_1 = __importDefault(require("./httpserver"));
 exports.data = new data_1.Data();
 exports.db = new database_1.Database();
 exports.client = new Discord.Client({ intents: [Discord.Intents.FLAGS.GUILDS] });
+exports.server = new httpserver_1.default(9002);
 exports.client.on("ready", () => { console.log("[CLIENT] connected"); });
 exports.client.on("interactionCreate", handleInteraction);
 exports.client.on("guildCreate", handleGuildJoin);

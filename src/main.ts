@@ -1,12 +1,14 @@
-import * as https from "https";
 import { Data } from "./data";
 import { Database } from "./database";
 import * as Discord from "discord.js";
 import { checkForNewPosts, fixImageUrl, getSubreddit, getSubredditInfo, getUser, getUserInfo, postEmbed } from "./util";
+import HttpServer from "./httpserver";
+
 
 export const data = new Data();
 export const db = new Database();
-export const client = new Discord.Client({ intents: [Discord.Intents.FLAGS.GUILDS] })
+export const client = new Discord.Client({ intents: [Discord.Intents.FLAGS.GUILDS] });
+export const server = new HttpServer(9002);
 
 client.on("ready", () => { console.log("[CLIENT] connected") });
 client.on("interactionCreate", handleInteraction);

@@ -123,5 +123,14 @@ class Database {
         }
         collection.insertMany(postsToInsert);
     }
+    // STATS
+    async amountDiscordServers() {
+        let collection = this.getCollection();
+        return (await collection.distinct("guilds")).length;
+    }
+    async amountSubreddits() {
+        let collection = this.getCollection();
+        return collection.find().count();
+    }
 }
 exports.Database = Database;

@@ -141,4 +141,14 @@ export class Database {
 
 		collection.insertMany(postsToInsert);
 	}
+
+	// STATS
+	async amountDiscordServers(): Promise<number> {
+		let collection = this.getCollection();
+		return (await collection.distinct("guilds")).length;
+	}
+	async amountSubreddits(): Promise<number> {
+		let collection = this.getCollection();
+		return collection.find().count();
+	}
 }
