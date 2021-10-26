@@ -121,7 +121,7 @@ function postEmbed(post, user, subreddit) {
         .setAuthor(post.data.author, userImage, "https://reddit.com/u/" + post.data.author)
         .setDescription(post.data.selftext)
         .setFooter(`r/${post.data.subreddit}`, subredditImage);
-    if (post.data.thumbnail && post.data.thumbnail != "self")
+    if (post.data.thumbnail && post.data.thumbnail.startsWith("http"))
         embed.setThumbnail(post.data.thumbnail);
     if (post.data.link_flair_background_color)
         embed.setColor(post.data.link_flair_background_color);

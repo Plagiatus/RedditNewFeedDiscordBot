@@ -115,7 +115,7 @@ export function postEmbed(post: Post, user?: RedditUser, subreddit?: SubredditIn
 		.setFooter(`r/${post.data.subreddit}`, subredditImage)
 		;
 
-	if (post.data.thumbnail && post.data.thumbnail != "self")
+	if (post.data.thumbnail && post.data.thumbnail.startsWith("http"))
 		embed.setThumbnail(post.data.thumbnail)
 	if (post.data.link_flair_background_color)
 		embed.setColor(post.data.link_flair_background_color as Discord.ColorResolvable);
