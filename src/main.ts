@@ -12,6 +12,7 @@ client.on("ready", () => { console.log("[CLIENT] connected") });
 client.on("interactionCreate", handleInteraction);
 client.on("guildCreate", handleGuildJoin);
 client.on("guildDelete", handleGuildLeave);
+client.on("roleUpdate", handleRoleUpdate);
 
 async function start() {
 	await db.connect();
@@ -153,4 +154,8 @@ async function handleGuildLeave(guild: Discord.Guild) {
 function handleGuildJoin(guild: Discord.Guild) {
 	console.log("[GUILD] Joined:", guild.name);
 	updateSlashCommands(guild);
+}
+
+function handleRoleUpdate(role: Discord.Role) {
+	updateSlashCommands(role.guild);
 }

@@ -18,6 +18,7 @@ exports.client.on("ready", () => { console.log("[CLIENT] connected"); });
 exports.client.on("interactionCreate", handleInteraction);
 exports.client.on("guildCreate", handleGuildJoin);
 exports.client.on("guildDelete", handleGuildLeave);
+exports.client.on("roleUpdate", handleRoleUpdate);
 async function start() {
     await exports.db.connect();
     await exports.client.login(exports.data.config.botToken);
@@ -157,4 +158,7 @@ async function handleGuildLeave(guild) {
 function handleGuildJoin(guild) {
     console.log("[GUILD] Joined:", guild.name);
     updateSlashCommands(guild);
+}
+function handleRoleUpdate(role) {
+    updateSlashCommands(role.guild);
 }
