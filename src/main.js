@@ -102,7 +102,7 @@ async function updateSlashCommandsInGuild(guild, commands) {
             await guild.roles.fetch();
             const permissions = [];
             for (let roleId of guild.roles.cache.keys()) {
-                if (guild.roles.cache.get(roleId)?.permissions.has(Discord.Permissions.FLAGS.MANAGE_CHANNELS)) {
+                if (guild.roles.cache.get(roleId)?.permissions.has(Discord.Permissions.FLAGS.MANAGE_CHANNELS) || guild.roles.cache.get(roleId)?.permissions.has(Discord.Permissions.FLAGS.ADMINISTRATOR) || guild.roles.cache.get(roleId)?.permissions.has(Discord.Permissions.FLAGS.MANAGE_GUILD)) {
                     permissions.push({
                         id: roleId,
                         type: "ROLE",
@@ -110,6 +110,12 @@ async function updateSlashCommandsInGuild(guild, commands) {
                     });
                 }
             }
+            let owner = await guild.fetchOwner();
+            permissions.push({
+                id: owner.id,
+                type: "USER",
+                permission: true
+            });
             await newCommand.permissions.set({ permissions });
         }
     }
