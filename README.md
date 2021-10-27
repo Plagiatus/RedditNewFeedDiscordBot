@@ -33,6 +33,16 @@ If you want to host the bot yourself, you need a few prequisites:
 3. Setup a `src/config.json` file as described below
 4. Run `npm start`
 
+### Update
+
+When updating the sourcecode from a previous clone, do the following:
+
+1. Stop the currently running bot
+2. `git pull` the changes
+3. run `npm install` again
+4. Make sure the config.json is up to date with possible new requirements
+5. run `npm start`
+
 #### Config file
 The config.json file, located in the src folder, needs to include the following fields:
 
@@ -41,10 +51,10 @@ The config.json file, located in the src folder, needs to include the following 
 	"botToken": "[your bot token]",
 	"db": {
 		"name": "[database name]",
-		"user": "[db username]",						//can be empty if local DB is used
-		"password": "[db password]",				//can be empty if local DB is used
+		"user": "[db username]",		//can be empty if local DB is used
+		"password": "[db password]",		//can be empty if local DB is used
 		"url": "[db url, without the protocol]", //e.g. "localhost:27017" or "some.thing.mongodb.net"
-		"isAtlas": false						//true if using mongodb.com or other altas provider
+		"isAtlas": false			//true if using mongodb.com or other altas provider
 	},
 	"refreshIntervall": 5				//how often you want the bot to press F5 on the subreddits, in minutes
 }
