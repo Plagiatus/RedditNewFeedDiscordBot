@@ -5,7 +5,8 @@
   "main": "main.js",
   "scripts": {
     "start": "node src/main.js",
-		"db": "D:\\Programme\\MongoDB\\4.0\\bin\\mongod.exe --dbpath ./data"
+    "db": "D:\\Programme\\MongoDB\\4.0\\bin\\mongod.exe --dbpath ./data",
+    "postinstall": "tsc"
   },
   "author": "Lukas Scheuerle (Plagiatus)",
   "license": "ISC",
@@ -14,6 +15,7 @@
     "mongodb": "^4.1.3"
   },
   "devDependencies": {
-    "@types/node": "^16.11.1"
+    "@types/node": "^16.11.1",
+    "typescript": "^4.4.4"
   }
 }
