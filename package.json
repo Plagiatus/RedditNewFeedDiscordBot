@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node src/main.js",
     "db": "D:\\Programme\\MongoDB\\4.0\\bin\\mongod.exe --dbpath ./data",
-    "postinstall": "tsc"
+    "postinstall": "tsc -t es6"
   },
   "author": "Lukas Scheuerle (Plagiatus)",
   "license": "ISC",
