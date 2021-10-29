@@ -108,7 +108,7 @@ export function postEmbed(post: Post, user?: RedditUser, subreddit?: SubredditIn
 	}
 
 	let embed = new Discord.MessageEmbed()
-		.setTitle(`${flairText}${post.data.title}`)
+		.setTitle(`${flairText}${post.data.title}`.substr(0, 256))
 		.setURL(`https://redd.it/${post.data.id}`)
 		.setAuthor(post.data.author, userImage, "https://reddit.com/u/" + post.data.author)
 		.setDescription(post.data.selftext)
