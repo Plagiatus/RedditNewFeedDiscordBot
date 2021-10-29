@@ -112,7 +112,9 @@ async function updateSlashCommandsInGuild(guild: Discord.Guild, commands: any[])
 				permissions = [];
 
 				for (let roleId of guild.roles.cache.keys()) {
-					if (guild.roles.cache.get(roleId)?.permissions.has(Discord.Permissions.FLAGS.MANAGE_CHANNELS) || guild.roles.cache.get(roleId)?.permissions.has(Discord.Permissions.FLAGS.ADMINISTRATOR) || guild.roles.cache.get(roleId)?.permissions.has(Discord.Permissions.FLAGS.MANAGE_GUILD)) {
+					let rolePermissions = guild.roles.cache.get(roleId)?.permissions;
+					if (!rolePermissions) continue;
+					if (rolePermissions.has(Discord.Permissions.FLAGS.MANAGE_CHANNELS) || rolePermissions.has(Discord.Permissions.FLAGS.ADMINISTRATOR) || rolePermissions.has(Discord.Permissions.FLAGS.MANAGE_GUILD)) {
 						permissions.push({
 							id: roleId,
 							type: "ROLE",

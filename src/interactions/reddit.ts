@@ -1,7 +1,7 @@
 import { Channel, CommandInteraction, MessageEmbed } from "discord.js"
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { sendRedditRequest, subredditUrl } from "../util";
-import { db } from "../main";
+import { client, db } from "../main";
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -53,21 +53,27 @@ async function add(interaction: CommandInteraction) {
 		return;
 	}
 
-	let response = await sendRedditRequest(subredditUrl(subreddit)).catch(async (reason)=>{
-		await interaction.editReply({content: "**ERROR**: Subreddit not found. It's either private, banned, otherise not publicly available or doesn't exist."});
+	let botPermissions = channel.permissionsFor(client.user?.id || "");
+	if (!botPermissions || !botPermissions.has("SEND_MESSAGES") || !botPermissions.has("VIEW_CHANNEL")) {
+		await interaction.editReply({ content: "ERROR: I have no permission to send messages in that channel." });
+		return;
+	}
+
+	let response = await sendRedditRequest(subredditUrl(subreddit)).catch(async (reason) => {
+		await interaction.editReply({ content: "**ERROR**: Subreddit not found. It's either private, banned, otherise not publicly available or doesn't exist." });
 	});
-	if(!response) return;
-	if(!interaction.guildId) {
-		await interaction.editReply({content: "**ERROR**: Discord server not found."});
+	if (!response) return;
+	if (!interaction.guildId) {
+		await interaction.editReply({ content: "**ERROR**: Discord server not found." });
 		return;
 	}
 
 	let alreadySubscribed: boolean = await db.doesSubscriptionAlreadyExist(interaction.guildId, subreddit);
-	if(alreadySubscribed){
+	if (alreadySubscribed) {
 		await db.removeSubscription(interaction.guildId, subreddit);
-		await interaction.editReply({content: `I'll now post new submissions from **r/${subreddit}** to a different channel: ${channel}`});
+		await interaction.editReply({ content: `I'll now post new submissions from **r/${subreddit}** to a different channel: ${channel}` });
 	} else {
-		await interaction.editReply({content: `Success! I'll now post new submissions from **r/${subreddit}** to ${channel}.`});
+		await interaction.editReply({ content: `Success! I'll now post new submissions from **r/${subreddit}** to ${channel}.` });
 	}
 	await db.addSubscription(interaction.guildId, channel.id, subreddit);
 }
@@ -80,48 +86,56 @@ async function remove(interaction: CommandInteraction) {
 		await interaction.editReply({ content: "**ERROR**: Subreddit option hasn't been filled." });
 		return;
 	}
-	if(!interaction.guildId) {
-		await interaction.editReply({content: "**ERROR**: Discord server not found."});
+	if (!interaction.guildId) {
+		await interaction.editReply({ content: "**ERROR**: Discord server not found." });
 		return;
 	}
-	
+
 	let alreadySubscribed: boolean = await db.doesSubscriptionAlreadyExist(interaction.guildId, subreddit);
-	if(!alreadySubscribed){
-		interaction.editReply({content: `**ERROR**: You weren't subscribed to **${subreddit}** in the first place.` });
+	if (!alreadySubscribed) {
+		interaction.editReply({ content: `**ERROR**: You weren't subscribed to **${subreddit}** in the first place.` });
 		return;
 	}
-	interaction.editReply({content: `Subreddit feed from **${subreddit}** has been successfully removed.`});
+	interaction.editReply({ content: `Subreddit feed from **${subreddit}** has been successfully removed.` });
 	await db.removeSubscription(interaction.guildId, subreddit);
 }
 subcommands.set("remove", remove);
 
 async function list(interaction: CommandInteraction) {
-	if(!interaction.guildId){
-		interaction.editReply({content: "**ERROR**: Discord server not found."});
+	if (!interaction.guildId) {
+		interaction.editReply({ content: "**ERROR**: Discord server not found." });
 		return;
 	}
 	let subscriptions: SubscriptionInfo[] = await db.getSubscriptionsInGuild(interaction.guildId);
-	if(subscriptions.length == 0) {
-		interaction.editReply({content: "There are **no feeds** linked to this discord server."})
+	if (subscriptions.length == 0) {
+		interaction.editReply({ content: "There are **no feeds** linked to this discord server." })
 		return;
 	}
 	let embed: MessageEmbed = new MessageEmbed()
-	.setTitle("List of linked feeds")
-	.setDescription(`There are **${subscriptions.length}** feeds linked to this discord server:`);
-	for(let sub of subscriptions){
+		.setTitle("List of linked feeds")
+		.setDescription(`There are **${subscriptions.length}** feeds linked to this discord server:`);
+	for (let sub of subscriptions) {
 		try {
 			let channel = await interaction.guild?.channels.fetch(sub.guilds.find(g => g.guild == interaction.guildId)?.channel || "");
-			if(!channel){
+			if (!channel) {
 				embed.addField(`r/${sub.subreddit}`, "_invalid channel_", true);
-			} else {
-				embed.addField(`r/${sub.subreddit}`, channel.toString(), true);
+				continue;
 			}
+
+			let botPermissions = channel.permissionsFor(client.user?.id || "");
+			if (!botPermissions || botPermissions.has("SEND_MESSAGES") || !botPermissions.has("VIEW_CHANNEL")) {
+				embed.addField(`r/${sub.subreddit}`, `${channel.toString()}\n_no permission_`, true);
+				continue;
+			}
+
+			embed.addField(`r/${sub.subreddit}`, channel.toString(), true);
+
 		} catch (error) {
 			embed.addField(`r/${sub.subreddit}`, "_invalid channel_", true);
-			
+
 		}
 	}
-	interaction.editReply({embeds:[embed]});
+	interaction.editReply({ embeds: [embed] });
 }
 subcommands.set("list", list);
 
