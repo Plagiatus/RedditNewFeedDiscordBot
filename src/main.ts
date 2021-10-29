@@ -68,7 +68,7 @@ async function updateSlashCommands(guild?: Discord.Guild) {
 		await updateSlashCommandsInGuild(guild, commands);
 	} else {
 		await client.guilds.fetch();
-
+		console.log("amount of guilds", client.guilds.cache.size);
 		for (let guild of client.guilds.cache.values()) {
 			await updateSlashCommandsInGuild(guild, commands);
 		}
@@ -78,55 +78,65 @@ async function updateSlashCommands(guild?: Discord.Guild) {
 
 async function updateSlashCommandsInGuild(guild: Discord.Guild, commands: any[]) {
 	//refresh commands of guild
-	await guild.commands.fetch();
-	for (let command of guild.commands.cache.values()) {
-		// remove outdated commands
-		let found: boolean = false;
-		for (let i of data.interactions.values()) {
-			if (i.data?.name == command.name) {
-				found = true;
-				break;
+	console.log(guild.id);
+	try {
+		await guild.commands.fetch();
+		for (let command of guild.commands.cache.values()) {
+			// remove outdated commands
+			let found: boolean = false;
+			for (let i of data.interactions.values()) {
+				if (i.data?.name == command.name) {
+					found = true;
+					break;
+				}
+			}
+			if (!found) {
+				await guild.commands.delete(command.id);
 			}
 		}
-		if (!found) {
-			await guild.commands.delete(command.id);
-		}
-	}
-	// add/update commands
-	for (let command of commands) {
-		let newCommand = await guild.commands.create(command);
-		//enable mod-only useage
-		if (!newCommand.defaultPermission) {
-			await guild.roles.fetch();
-			let permissions: Discord.ApplicationCommandPermissionData[] = [];
+		// add/update commands
+		for (let command of commands) {
+			let newCommand = await guild.commands.create(command);
+			//enable mod-only useage
+			if (!newCommand.defaultPermission) {
+				await guild.roles.fetch();
+				let permissions: Discord.ApplicationCommandPermissionData[] = [];
 
-			let owner = await guild.fetchOwner();
-			permissions.push({
-				id: owner.id,
-				type: "USER",
-				permission: true
-			});
-			await newCommand.permissions.set({ permissions });
-			permissions = [];
-			
-			for (let roleId of guild.roles.cache.keys()) {
-				if (guild.roles.cache.get(roleId)?.permissions.has(Discord.Permissions.FLAGS.MANAGE_CHANNELS) || guild.roles.cache.get(roleId)?.permissions.has(Discord.Permissions.FLAGS.ADMINISTRATOR) || guild.roles.cache.get(roleId)?.permissions.has(Discord.Permissions.FLAGS.MANAGE_GUILD)) {
-					permissions.push({
-						id: roleId,
-						type: "ROLE",
-						permission: true
-					});
+				let owner = await guild.fetchOwner();
+				permissions.push({
+					id: owner.id,
+					type: "USER",
+					permission: true
+				});
+				await newCommand.permissions.set({ permissions });
+				permissions = [];
+
+				for (let roleId of guild.roles.cache.keys()) {
+					if (guild.roles.cache.get(roleId)?.permissions.has(Discord.Permissions.FLAGS.MANAGE_CHANNELS) || guild.roles.cache.get(roleId)?.permissions.has(Discord.Permissions.FLAGS.ADMINISTRATOR) || guild.roles.cache.get(roleId)?.permissions.has(Discord.Permissions.FLAGS.MANAGE_GUILD)) {
+						permissions.push({
+							id: roleId,
+							type: "ROLE",
+							permission: true
+						});
+					}
+					if (permissions.length == 9) {
+						console.log(permissions.length);
+						await newCommand.permissions.add({ permissions });
+						permissions = [];
+					}
 				}
-				if(permissions.length == 10){
+				if (permissions.length > 0) {
+					console.log(permissions.length);
 					await newCommand.permissions.add({ permissions });
-					permissions = [];
 				}
+
 			}
-			if(permissions.length > 0){
-				await newCommand.permissions.add({ permissions });
-			}
-			
 		}
+	} catch (error) {
+		console.error(error);
+		// if(error.requestData) {
+		// 	console.log(error.requestData);
+		// }
 	}
 }
 
