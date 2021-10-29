@@ -98,16 +98,7 @@ async function updateSlashCommandsInGuild(guild: Discord.Guild, commands: any[])
 		//enable mod-only useage
 		if (!newCommand.defaultPermission) {
 			await guild.roles.fetch();
-			const permissions: Discord.ApplicationCommandPermissionData[] = [];
-			for (let roleId of guild.roles.cache.keys()) {
-				if (guild.roles.cache.get(roleId)?.permissions.has(Discord.Permissions.FLAGS.MANAGE_CHANNELS) || guild.roles.cache.get(roleId)?.permissions.has(Discord.Permissions.FLAGS.ADMINISTRATOR) || guild.roles.cache.get(roleId)?.permissions.has(Discord.Permissions.FLAGS.MANAGE_GUILD)) {
-					permissions.push({
-						id: roleId,
-						type: "ROLE",
-						permission: true
-					});
-				}
-			}
+			let permissions: Discord.ApplicationCommandPermissionData[] = [];
 
 			let owner = await guild.fetchOwner();
 			permissions.push({
@@ -116,6 +107,25 @@ async function updateSlashCommandsInGuild(guild: Discord.Guild, commands: any[])
 				permission: true
 			});
 			await newCommand.permissions.set({ permissions });
+			permissions = [];
+			
+			for (let roleId of guild.roles.cache.keys()) {
+				if (guild.roles.cache.get(roleId)?.permissions.has(Discord.Permissions.FLAGS.MANAGE_CHANNELS) || guild.roles.cache.get(roleId)?.permissions.has(Discord.Permissions.FLAGS.ADMINISTRATOR) || guild.roles.cache.get(roleId)?.permissions.has(Discord.Permissions.FLAGS.MANAGE_GUILD)) {
+					permissions.push({
+						id: roleId,
+						type: "ROLE",
+						permission: true
+					});
+				}
+				if(permissions.length == 10){
+					await newCommand.permissions.add({ permissions });
+					permissions = [];
+				}
+			}
+			if(permissions.length > 0){
+				await newCommand.permissions.add({ permissions });
+			}
+			
 		}
 	}
 }
