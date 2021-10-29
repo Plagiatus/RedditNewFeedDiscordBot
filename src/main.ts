@@ -154,6 +154,10 @@ async function updateRedditFeeds() {
 				let channel = await client.channels.fetch(guildAndChannel.channel);
 				if (!channel) continue;
 				if (!channel.isText()) continue;
+
+				let botPermissions = (<Discord.TextChannel>channel).permissionsFor(client.user?.id || "");
+				if (!botPermissions || !botPermissions.has("SEND_MESSAGES") || !botPermissions.has("VIEW_CHANNEL")) continue;
+				
 				for (let post of newPosts) {
 					let embed: Discord.MessageEmbed = postEmbed(post, await getUser(post.data.author, redditUserCache), await getSubreddit(post.data.subreddit, subredditInfoCache));
 					await channel.send({ embeds: [embed] });
