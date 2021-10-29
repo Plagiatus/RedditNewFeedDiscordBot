@@ -123,7 +123,7 @@ async function list(interaction: CommandInteraction) {
 			}
 
 			let botPermissions = channel.permissionsFor(client.user?.id || "");
-			if (!botPermissions || botPermissions.has("SEND_MESSAGES") || !botPermissions.has("VIEW_CHANNEL")) {
+			if (!botPermissions || !botPermissions.has("SEND_MESSAGES") || !botPermissions.has("VIEW_CHANNEL")) {
 				embed.addField(`r/${sub.subreddit}`, `${channel.toString()}\n_no permission_`, true);
 				continue;
 			}
