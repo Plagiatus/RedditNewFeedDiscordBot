@@ -135,11 +135,43 @@ export class Database {
 		for (let post of posts) {
 			postsToInsert.push({ post: post.data.id });
 		}
-		if(postsToInsert.length == 0) {
-			postsToInsert.push({post: "00000"});
+		if (postsToInsert.length == 0) {
+			postsToInsert.push({ post: "00000" });
 		}
 
 		collection.insertMany(postsToInsert);
+	}
+
+	// Cache clearing
+	async cleanCache(subreddit: string) {
+		subreddit = subreddit.toLowerCase();
+		let collection = this.getCollection(subreddit);
+		let size: number = await collection.find().count();
+		if (size <= 50) return;
+		let elementsToRemove = await collection.find().sort({ _id: "asc" }).limit(size - 50).toArray();
+		for (let el of elementsToRemove) {
+			collection.deleteOne({ _id: el._id });
+		}
+	}
+
+	// amount of posted messages
+	async addToTotalMessages(subreddit: string, n: number = 1) {
+		subreddit = subreddit.toLowerCase();
+		let collection = this.getCollection("botStatistics");
+		collection.updateOne(
+			{ subreddit },
+			{
+				$inc: {
+					total: n
+				}
+			},
+			{ upsert: true }
+		)
+	}
+
+	async getTotalPostsInSubreddit(subreddit: string): Promise<number> {
+		let collection = this.getCollection(subreddit);
+		return collection.find().count();
 	}
 
 	// STATS
@@ -150,5 +182,28 @@ export class Database {
 	async amountSubreddits(): Promise<number> {
 		let collection = this.getCollection();
 		return collection.find().count();
+	}
+	async amountPosts(): Promise<string> {
+		let collection = this.getCollection("botStatistics");
+		let result = await collection.aggregate([{
+			$group: {
+				_id: 1,
+				all: {
+					$sum: "$total"
+				},
+				count: {
+					$sum: 1
+				}
+			}
+		}]).toArray();
+
+		let num: number = result[0].all;
+		if(num > 1000000){
+			return (num / 1000000).toFixed(1) + "M";
+		}
+		if(num > 1000){
+			return (num / 1000).toFixed(1) + "k";
+		}
+		return num.toString();
 	}
 }

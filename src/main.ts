@@ -23,6 +23,7 @@ async function start() {
 
 	setInterval(updateRedditFeeds, data.config.refreshIntervall * 60 * 1000);
 	updateRedditFeeds();
+	cleanUpCachedPosts();
 }
 start();
 
@@ -157,7 +158,7 @@ async function updateRedditFeeds() {
 
 				let botPermissions = (<Discord.TextChannel>channel).permissionsFor(client.user?.id || "");
 				if (!botPermissions || !botPermissions.has("SEND_MESSAGES") || !botPermissions.has("VIEW_CHANNEL")) continue;
-				
+
 				for (let post of newPosts) {
 					let embed: Discord.MessageEmbed = postEmbed(post, await getUser(post.data.author, redditUserCache), await getSubreddit(post.data.subreddit, subredditInfoCache));
 					await channel.send({ embeds: [embed] });
@@ -167,6 +168,7 @@ async function updateRedditFeeds() {
 				continue;
 			}
 		}
+		db.addToTotalMessages(subscription.subreddit, newPosts.length);
 	}
 }
 
@@ -186,4 +188,12 @@ function handleGuildJoin(guild: Discord.Guild) {
 
 function handleRoleUpdate(role: Discord.Role) {
 	updateSlashCommands(role.guild);
+}
+
+async function cleanUpCachedPosts() {
+	setTimeout(cleanUpCachedPosts, 1000 * 60 * 60 * 24);
+	let subscriptions: SubscriptionInfo[] = await db.getSubscriptions();
+	for(let subscription of subscriptions) {
+		db.cleanCache(subscription.subreddit);
+	}
 }
