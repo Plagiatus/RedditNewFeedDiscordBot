@@ -1,7 +1,7 @@
 import { db } from "./main";
 
 async function main() {
-	db.connect();
+	await db.connect();
 	let allSubscriptions: SubscriptionInfo[] = await db.getSubscriptions();
 	for (let subscription of allSubscriptions) {
 		let total: number = await db.getTotalPostsInSubreddit(subscription.subreddit);
