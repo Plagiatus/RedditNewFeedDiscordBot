@@ -39,6 +39,7 @@ export default class HttpServer {
 	private registerPaths() {
 		this.paths.set("/shield/joinamount", this.shieldJoinAmount);
 		this.paths.set("/shield/subredditamount", this.shieldSubredditAmount);
+		this.paths.set("/shield/postamount", this.shieldPostAmount);
 	}
 
 	private async shieldJoinAmount(req: http.IncomingMessage, res: http.OutgoingMessage) {
@@ -48,6 +49,10 @@ export default class HttpServer {
 	private async shieldSubredditAmount(req: http.IncomingMessage, res: http.OutgoingMessage) {
 		let total = await db.amountSubreddits();
 		res.write(JSON.stringify(makeShieldResponse(total.toString(), "Watched subreddits")))
+	}
+	private async shieldPostAmount(req: http.IncomingMessage, res: http.OutgoingMessage) {
+		let total: string = await db.amountPosts();
+		res.write(JSON.stringify(makeShieldResponse(total, "Posted posts")))
 	}
 }
 
