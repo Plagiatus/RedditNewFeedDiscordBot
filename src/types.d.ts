@@ -7,7 +7,8 @@ interface Config {
 		name: string,
 		isAtlas: boolean,
 	},
-	refreshIntervall: number
+	refreshIntervall: number,
+	psaAuth: string,
 }
 
 type SlashCommandBuilder = import("@discordjs/builders").SlashCommandBuilder;

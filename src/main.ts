@@ -193,7 +193,39 @@ function handleRoleUpdate(role: Discord.Role) {
 async function cleanUpCachedPosts() {
 	setTimeout(cleanUpCachedPosts, 1000 * 60 * 60 * 24);
 	let subscriptions: SubscriptionInfo[] = await db.getSubscriptions();
-	for(let subscription of subscriptions) {
+	for (let subscription of subscriptions) {
 		db.cleanCache(subscription.subreddit);
+	}
+}
+
+export async function sendStatusMessage(title: string, message: string, thumbURL?: string, imageURL?: string) {
+	let allSubscriptions: SubscriptionInfo[] = await db.getSubscriptions();
+	let sentChannels: string[] = [];
+	for (let subscription of allSubscriptions) {
+		for (let guildAndChannel of subscription.guilds) {
+			if (sentChannels.includes(guildAndChannel.channel)) continue;
+			sentChannels.push(guildAndChannel.channel);
+			try {
+				let channel = await client.channels.fetch(guildAndChannel.channel);
+				if (!channel) continue;
+				if (!channel.isText()) continue;
+
+				let botPermissions = (<Discord.TextChannel>channel).permissionsFor(client.user?.id || "");
+				if (!botPermissions || !botPermissions.has("SEND_MESSAGES") || !botPermissions.has("VIEW_CHANNEL")) continue;
+
+				let embed: Discord.MessageEmbed = new Discord.MessageEmbed().setTitle(title || "RedditNewFeedBot Information").setDescription(message);
+				if (imageURL) {
+					embed.setImage(imageURL);
+				}
+				if (thumbURL) {
+					embed.setThumbnail(thumbURL);
+				}
+
+				await channel.send({ embeds: [embed] })
+			} catch (error) {
+				console.log(error);
+				continue;
+			}
+		}
 	}
 }

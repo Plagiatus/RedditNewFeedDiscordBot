@@ -1,5 +1,5 @@
 import * as http from "http";
-import { db } from "./main";
+import { data, db, sendStatusMessage } from "./main";
 
 export default class HttpServer {
 	server: http.Server;
@@ -40,6 +40,33 @@ export default class HttpServer {
 		this.paths.set("/shield/joinamount", this.shieldJoinAmount);
 		this.paths.set("/shield/subredditamount", this.shieldSubredditAmount);
 		this.paths.set("/shield/postamount", this.shieldPostAmount);
+		this.paths.set("/psa", this.sendPSA.bind(this));
+	}
+
+	private async sendPSA(req: http.IncomingMessage, res: http.OutgoingMessage) {
+		if (!req.headers.authorization || req.headers.authorization != data.config.psaAuth) {
+			res.write(this.createError("Authorization failed", 401));
+			return;
+		}
+		if(req.method != "PUT"){
+			res.write(this.createError("Needs to be PUT Method", 405));
+			return;
+		}
+		let p: Promise<void> = new Promise((resolve, reject) => {
+			let bodyData = "";
+			req.on("data", data => { bodyData += data });
+			req.on("end", ()=>{
+				let input = JSON.parse(bodyData);
+				if(!input.title || !input.message) {
+					res.write(this.createError("Missing fields.", 400));
+					resolve();
+					return;
+				}
+				sendStatusMessage(input.title, input.message, input.thumb, input.image);
+				resolve();
+			})
+		});
+		return p;
 	}
 
 	private async shieldJoinAmount(req: http.IncomingMessage, res: http.OutgoingMessage) {
