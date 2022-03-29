@@ -45,14 +45,19 @@ export function subredditInfoUrl(sub: string): string {
 }
 
 export async function checkForNewPosts(sub: string): Promise<Post[]> {
-	let posts: Post[] = (await sendRedditRequest(newPostUrl(sub))).data.children;
-	let newPosts: Post[] = [];
-	for (let i: number = 0; i < posts.length; i++) {
-		let post = posts[i];
-		if (await db.wasPostAlreadyPosted(sub, post)) return newPosts;
-		newPosts.push(post);
+	try {
+		let posts: Post[] = (await sendRedditRequest(newPostUrl(sub))).data.children;
+		let newPosts: Post[] = [];
+		for (let i: number = 0; i < posts.length; i++) {
+			let post = posts[i];
+			if (await db.wasPostAlreadyPosted(sub, post)) return newPosts;
+			newPosts.push(post);
+		}
+		return newPosts;
+	} catch (error) {
+		return [];
+		//TODO: remove subreddit from subscriptions
 	}
-	return newPosts;
 }
 
 export async function grabInitialPosts(sub: string) {
@@ -103,16 +108,16 @@ export function postEmbed(post: Post, user?: RedditUser, subreddit?: SubredditIn
 			flairText += richtext.t;
 	}
 	flairText = flairText.trim();
-	if(flairText.length > 0){
+	if (flairText.length > 0) {
 		flairText = "[" + flairText + "] "
 	}
 
 	let embed = new Discord.MessageEmbed()
-		.setTitle(`${flairText}${post.data.title}`.substr(0, 256))
+		.setTitle(`${flairText}${post.data.title}`.substring(0, 256))
 		.setURL(`https://redd.it/${post.data.id}`)
-		.setAuthor(post.data.author, userImage, "https://reddit.com/u/" + post.data.author)
-		.setDescription(post.data.selftext)
-		.setFooter(`r/${post.data.subreddit}`, subredditImage)
+		.setAuthor({ name: post.data.author, iconURL: userImage, url: "https://reddit.com/u/" + post.data.author })
+		.setDescription(post.data.selftext.length < 4000 ? post.data.selftext : post.data.selftext.substring(0, 4000) + "...")
+		.setFooter({ text: `r/${post.data.subreddit}`, iconURL: subredditImage })
 		;
 
 	if (post.data.thumbnail && post.data.thumbnail.startsWith("http"))

@@ -122,11 +122,11 @@ async function updateSlashCommandsInGuild(guild: Discord.Guild, commands: any[])
 							permission: true
 						});
 					}
-					if (permissions.length == 9) {
-						console.log(permissions.length);
-						await newCommand.permissions.add({ permissions });
-						permissions = [];
-					}
+					// if (permissions.length == 9) {
+					// 	console.log(permissions.length);
+					// 	await newCommand.permissions.add({ permissions });
+					// 	permissions = [];
+					// }
 				}
 				if (permissions.length > 0) {
 					console.log(permissions.length);
