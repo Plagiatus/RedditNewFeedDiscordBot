@@ -151,11 +151,17 @@ async function updateRedditFeeds() {
 		let newPosts: Post[] = await checkForNewPosts(subscription.subreddit);
 		if (newPosts.length == 0) continue;
 		for (let guildAndChannel of subscription.guilds) {
+			let channel: Discord.AnyChannel | null;
 			try {
-				let channel = await client.channels.fetch(guildAndChannel.channel);
+				channel = await client.channels.fetch(guildAndChannel.channel);
 				if (!channel) continue;
 				if (!channel.isText()) continue;
-
+			} catch (error) {
+				console.error("[ERROR] Couldn't get channel, removing subscription.");
+				db.removeSubscription(guildAndChannel.guild, subscription.subreddit);
+				continue;
+			}
+			try {	
 				let botPermissions = (<Discord.TextChannel>channel).permissionsFor(client.user?.id || "");
 				if (!botPermissions || !botPermissions.has("SEND_MESSAGES") || !botPermissions.has("VIEW_CHANNEL")) continue;
 
@@ -164,7 +170,7 @@ async function updateRedditFeeds() {
 					await channel.send({ embeds: [embed] });
 				}
 			} catch (error) {
-				console.log("possible channel error", error);
+				console.error(error);
 				continue;
 			}
 		}
