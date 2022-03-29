@@ -24,7 +24,10 @@ export async function sendRedditRequest(url: string): Promise<any> {
 			});
 			if (res.statusCode && (res.statusCode < 200 || res.statusCode >= 300)) {
 				console.error("Response returned non-2xx Status code:", res.statusCode, res.statusMessage);
-				reject("Response returned non-2xx Status code: " + res.statusCode + " " + res.statusMessage);
+				reject("Response returned non-2xx Status code: " + res.statusCode + " " + res.statusMessage + ": " + url);
+				if(res.statusCode == 404) {
+					removeSubscriptions(url);
+				}
 			}
 		})
 	});
@@ -126,4 +129,15 @@ export function postEmbed(post: Post, user?: RedditUser, subreddit?: SubredditIn
 		embed.setColor(post.data.link_flair_background_color as Discord.ColorResolvable);
 
 	return embed;
+}
+
+async function removeSubscriptions(subreddit: string){
+	if(!subreddit.startsWith("https://www.reddit.com/r/")) return;
+	subreddit = subreddit.substring(25);
+	subreddit = subreddit.split(/[\.\/]/g)[0];
+	console.log("[ERROR] have to remove subscriptions to: ", subreddit);
+	let si = await db.getSubscriptionsOfSubreddit(subreddit);
+	for(let guild of si.guilds){
+		await db.removeSubscription(guild.guild, subreddit);
+	}
 }

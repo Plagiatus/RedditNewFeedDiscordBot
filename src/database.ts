@@ -42,6 +42,10 @@ export class Database {
 		let collection = this.getCollection();
 		return collection.find().toArray() as Promise<SubscriptionInfo[]>;
 	}
+	async getSubscriptionsOfSubreddit(subreddit: string): Promise<SubscriptionInfo> {
+		let collection = this.getCollection();
+		return collection.findOne({subreddit}) as Promise<SubscriptionInfo>;
+	}
 
 	async getSubscriptionsInGuild(guild: string): Promise<SubscriptionInfo[]> {
 		let collection = this.getCollection();

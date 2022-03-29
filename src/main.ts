@@ -164,7 +164,7 @@ async function updateRedditFeeds() {
 					await channel.send({ embeds: [embed] });
 				}
 			} catch (error) {
-				console.log(error);
+				console.log("possible channel error", error);
 				continue;
 			}
 		}
