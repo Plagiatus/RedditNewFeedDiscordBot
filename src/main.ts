@@ -15,12 +15,10 @@ client.on("ready", () => { console.log("[CLIENT] connected") });
 client.on("interactionCreate", handleInteraction);
 client.on("guildCreate", handleGuildJoin);
 client.on("guildDelete", handleGuildLeave);
-client.on("roleUpdate", handleRoleUpdate);
 
 async function start() {
 	await db.connect();
 	await client.login(data.config.botToken);
-	await updateSlashCommands();
 
 	setInterval(updateRedditFeeds, data.config.refreshIntervall * 60 * 1000);
 	updateRedditFeeds();
@@ -54,94 +52,6 @@ async function handleButton(interaction: Discord.ButtonInteraction) {
 	} catch (error) {
 		console.error(error);
 		interaction.reply({ ephemeral: true, content: `There was an error using this button: ${error}. If this problem persists, contact a moderator.` });
-	}
-}
-
-async function updateSlashCommands(guild?: Discord.Guild) {
-	let commands = [];
-	//load new commands
-	for (let i of data.interactions.values()) {
-		if (i.type != "COMMAND") continue;
-		let newInteraction: any = i.data?.toJSON();
-		newInteraction.defaultPermission = i.defaultPermission;
-		commands.push(newInteraction);
-	}
-
-	if (guild) {
-		await updateSlashCommandsInGuild(guild, commands);
-	} else {
-		await client.guilds.fetch();
-		console.log("amount of guilds", client.guilds.cache.size);
-		for (let guild of client.guilds.cache.values()) {
-			await updateSlashCommandsInGuild(guild, commands);
-		}
-		console.log("[CLIENT] Updated slash commands.")
-	}
-}
-
-async function updateSlashCommandsInGuild(guild: Discord.Guild, commands: any[]) {
-	//refresh commands of guild
-	console.log(guild.id);
-	try {
-		await guild.commands.fetch();
-		for (let command of guild.commands.cache.values()) {
-			// remove outdated commands
-			let found: boolean = false;
-			for (let i of data.interactions.values()) {
-				if (i.data?.name == command.name) {
-					found = true;
-					break;
-				}
-			}
-			if (!found) {
-				await guild.commands.delete(command.id);
-			}
-		}
-		// add/update commands
-		for (let command of commands) {
-			let newCommand = await guild.commands.create(command);
-			//enable mod-only useage
-			if (!newCommand.defaultPermission) {
-				await guild.roles.fetch();
-				let permissions: Discord.ApplicationCommandPermissionData[] = [];
-
-				let owner = await guild.fetchOwner();
-				permissions.push({
-					id: owner.id,
-					type: "USER",
-					permission: true
-				});
-				await newCommand.permissions.set({ permissions });
-				permissions = [];
-
-				for (let roleId of guild.roles.cache.keys()) {
-					let rolePermissions = guild.roles.cache.get(roleId)?.permissions;
-					if (!rolePermissions) continue;
-					if (rolePermissions.has(Discord.Permissions.FLAGS.MANAGE_CHANNELS) || rolePermissions.has(Discord.Permissions.FLAGS.ADMINISTRATOR) || rolePermissions.has(Discord.Permissions.FLAGS.MANAGE_GUILD)) {
-						permissions.push({
-							id: roleId,
-							type: "ROLE",
-							permission: true
-						});
-					}
-					// if (permissions.length == 9) {
-					// 	console.log(permissions.length);
-					// 	await newCommand.permissions.add({ permissions });
-					// 	permissions = [];
-					// }
-				}
-				if (permissions.length > 0) {
-					console.log(permissions.length);
-					await newCommand.permissions.add({ permissions });
-				}
-
-			}
-		}
-	} catch (error) {
-		console.error(error);
-		// if(error.requestData) {
-		// 	console.log(error.requestData);
-		// }
 	}
 }
 
@@ -191,12 +101,8 @@ async function handleGuildLeave(guild: Discord.Guild) {
 
 function handleGuildJoin(guild: Discord.Guild) {
 	console.log("[GUILD] Joined:", guild.name);
-	updateSlashCommands(guild);
 }
 
-function handleRoleUpdate(role: Discord.Role) {
-	updateSlashCommands(role.guild);
-}
 
 async function cleanUpCachedPosts() {
 	setTimeout(cleanUpCachedPosts, 1000 * 60 * 60 * 24);
