@@ -1,7 +1,8 @@
 import { Channel, CommandInteraction, MessageEmbed } from "discord.js"
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { sendRedditRequest, subredditUrl } from "../util";
-import { client, db } from "../main";
+import { client, db, setActivity } from "../main";
+import { ActivityTypes } from "discord.js/typings/enums";
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -76,6 +77,7 @@ async function add(interaction: CommandInteraction) {
 		await interaction.editReply({ content: `Success! I'll now post new submissions from **r/${subreddit}** to ${channel}.` });
 	}
 	await db.addSubscription(interaction.guildId, channel.id, subreddit);
+	setActivity(ActivityTypes.WATCHING, `${await db.amountSubreddits()} subreddits`);
 }
 subcommands.set("add", add);
 
@@ -98,6 +100,7 @@ async function remove(interaction: CommandInteraction) {
 	}
 	interaction.editReply({ content: `Subreddit feed from **${subreddit}** has been successfully removed.` });
 	await db.removeSubscription(interaction.guildId, subreddit);
+	setActivity(ActivityTypes.WATCHING, `${await db.amountSubreddits()} subreddits`);
 }
 subcommands.set("remove", remove);
 

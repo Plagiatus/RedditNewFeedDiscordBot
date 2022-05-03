@@ -3,6 +3,7 @@ import { Database } from "./database";
 import * as Discord from "discord.js";
 import { checkForNewPosts, fixImageUrl, getSubreddit, getSubredditInfo, getUser, getUserInfo, postEmbed } from "./util";
 import HttpServer from "./httpserver";
+import { ActivityTypes } from "discord.js/typings/enums";
 
 
 export const data = new Data();
@@ -24,6 +25,7 @@ async function start() {
 	setInterval(updateRedditFeeds, data.config.refreshIntervall * 60 * 1000);
 	updateRedditFeeds();
 	cleanUpCachedPosts();
+	setActivity(ActivityTypes.WATCHING, `${await db.amountSubreddits()} subreddits`);
 }
 start();
 
@@ -161,7 +163,7 @@ async function updateRedditFeeds() {
 				db.removeSubscription(guildAndChannel.guild, subscription.subreddit);
 				continue;
 			}
-			try {	
+			try {
 				let botPermissions = (<Discord.TextChannel>channel).permissionsFor(client.user?.id || "");
 				if (!botPermissions || !botPermissions.has("SEND_MESSAGES") || !botPermissions.has("VIEW_CHANNEL")) continue;
 
@@ -233,5 +235,13 @@ export async function sendStatusMessage(title: string, message: string, thumbURL
 				continue;
 			}
 		}
+	}
+}
+
+export function setActivity(type: ActivityTypes, name: string) {
+	if (type == ActivityTypes.CUSTOM) {
+		client.user?.setActivity({ name })
+	} else {
+		client.user?.setActivity({ name, type })
 	}
 }
