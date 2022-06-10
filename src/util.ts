@@ -23,7 +23,7 @@ export async function sendRedditRequest(url: string): Promise<any> {
 				reject();
 			});
 			if (res.statusCode && (res.statusCode < 200 || res.statusCode >= 300)) {
-				console.error("Response returned non-2xx Status code:", res.statusCode, res.statusMessage);
+				console.error("Response returned non-2xx Status code:", res.statusCode, res.statusMessage, url);
 				reject("Response returned non-2xx Status code: " + res.statusCode + " " + res.statusMessage + ": " + url);
 				if(res.statusCode == 404) {
 					removeSubscriptions(url);
