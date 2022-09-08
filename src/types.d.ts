@@ -69,6 +69,7 @@ interface PostData {
 	id: string,
 	thumbnail?: string,
 	permalink: string,
+	post_hint: "image" | "link" | "self" | "hosted:video" | undefined,
 }
 
 interface FlairRichtext {

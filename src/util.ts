@@ -123,7 +123,10 @@ export function postEmbed(post: Post, user?: RedditUser, subreddit?: SubredditIn
 		.setFooter({ text: `r/${post.data.subreddit}`, iconURL: subredditImage })
 		;
 
-	if (post.data.thumbnail && post.data.thumbnail.startsWith("http"))
+	if ((post.data.post_hint && post.data.post_hint == "image") || (isUrlAnImage(post.data.url))) {
+		embed.setImage(post.data.url);
+	}
+	else if (post.data.thumbnail && post.data.thumbnail.startsWith("http"))
 		embed.setThumbnail(post.data.thumbnail)
 	if (post.data.link_flair_background_color)
 		embed.setColor(post.data.link_flair_background_color as Discord.ColorResolvable);
@@ -140,4 +143,15 @@ async function removeSubscriptions(subreddit: string){
 	for(let guild of si.guilds){
 		await db.removeSubscription(guild.guild, subreddit);
 	}
+}
+
+function isUrlAnImage(url: string): boolean {
+	if(url.endsWith(".png")) return true;
+	if(url.endsWith(".jpg")) return true;
+	if(url.endsWith(".jpeg")) return true;
+	if(url.endsWith(".gif")) return true;
+	if(url.endsWith(".gifv")) return true;
+	if(url.endsWith(".webm")) return true;
+
+	return false;
 }
