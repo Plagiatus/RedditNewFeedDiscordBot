@@ -61,7 +61,7 @@ async function add(interaction: CommandInteraction) {
 	}
 
 	let response = await sendRedditRequest(subredditUrl(subreddit)).catch(async (reason) => {
-		await interaction.editReply({ content: "**ERROR**: Subreddit not found. It's either private, banned, otherise not publicly available or doesn't exist." });
+		await interaction.editReply({ content: "**ERROR**: Subreddit not found. It's either private, banned, otherwise not publicly available or doesn't exist." });
 	});
 	if (!response) return;
 	if (!interaction.guildId) {
