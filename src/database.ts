@@ -1,25 +1,25 @@
 import * as Mongo from "mongodb";
-import { data } from "./main";
+import { Data } from "./data";
 import { grabInitialPosts } from "./util";
-
 
 export class Database {
 	static instance: Database | null;
 	private client!: Mongo.MongoClient;
 	private connected!: boolean;
+	private data = new Data();
 	constructor() {
 		if (Database.instance) return Database.instance;
 		let options: Mongo.MongoClientOptions = {};
 		let url: string = `mongodb`
 
-		if (data.config.db.isAtlas) {
+		if (this.data.config.db.isAtlas) {
 			url += "+srv";
 		}
 		url += `://`;
-		if (!data.config.db.user || !data.config.db.password) {
-			url += data.config.db.url;
+		if (!this.data.config.db.user || !this.data.config.db.password) {
+			url += this.data.config.db.url;
 		} else {
-			url += `${data.config.db.user}:${data.config.db.password}@${data.config.db.url}`;
+			url += `${this.data.config.db.user}:${this.data.config.db.password}@${this.data.config.db.url}`;
 		}
 		this.client = new Mongo.MongoClient(url, options);
 		this.connected = false;
@@ -28,7 +28,11 @@ export class Database {
 	}
 
 	private getCollection(name: string = "subscriptionInfo"): Mongo.Collection {
-		return this.client.db(data.config.db.name).collection(name);
+		return this.client.db(this.data.config.db.name).collection(name);
+	}
+
+	async getAllCollections(): Promise<Mongo.Collection[]> {
+		return this.client.db(this.data.config.db.name).collections()
 	}
 
 	async connect(): Promise<void> {
@@ -101,7 +105,11 @@ export class Database {
 		if (deleteResult.deletedCount == 0) {
 			return;
 		}
-		this.client.db(data.config.db.name).dropCollection(subreddit, (err, res) => { });
+		this.client.db(this.data.config.db.name).dropCollection(subreddit, (err, res) => { });
+	}
+	
+	async removeCollection(name: string){
+		this.client.db(this.data.config.db.name).dropCollection(name, (err, res) => { });
 	}
 
 	async doesSubscriptionAlreadyExist(guild: string, subreddit: string): Promise<boolean> {
