@@ -3,7 +3,7 @@
  * 
  */
 
-import { client, db } from "./main";
+import { client, db } from "../main";
 
 async function cleanup() {
     await db.connect();
