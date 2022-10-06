@@ -119,7 +119,7 @@ export function postEmbed(post: Post, user?: RedditUser, subreddit?: SubredditIn
 		.setTitle(`${flairText}${post.data.title}`.substring(0, 256))
 		.setURL(`https://redd.it/${post.data.id}`)
 		.setAuthor({ name: post.data.author, iconURL: userImage, url: "https://reddit.com/u/" + post.data.author })
-		.setDescription(post.data.selftext.length < 4000 ? post.data.selftext : post.data.selftext.substring(0, 4000) + "...")
+		.setDescription(post.data.selftext.length < 4000 ? post.data.selftext || " " : post.data.selftext.substring(0, 4000) + "...")
 		.setFooter({ text: `r/${post.data.subreddit}`, iconURL: subredditImage })
 		;
 
