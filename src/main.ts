@@ -18,7 +18,6 @@ client.on("guildDelete", handleGuildLeave);
 async function start() {
 	await db.connect();
 	await client.login(data.config.botToken);
-	// await updateSlashCommands();
 
 	setInterval(updateRedditFeeds, data.config.refreshIntervall * 60 * 1000);
 	updateRedditFeeds();
@@ -52,56 +51,6 @@ async function handleButton(interaction: Discord.ButtonInteraction) {
 	} catch (error) {
 		console.error(error);
 		interaction.reply({ ephemeral: true, content: `There was an error using this button: ${error}. If this problem persists, contact a moderator.` });
-	}
-}
-
-
-async function updateSlashCommands(guild?: Discord.Guild) {
-	let commands = [];
-	//load new commands
-	for (let i of data.interactions.values()) {
-		if (i.type != "COMMAND") continue;
-		let newInteraction: any = i.data?.toJSON();
-		newInteraction.defaultPermission = i.defaultPermission;
-		commands.push(newInteraction);
-	}
-
-	if (guild) {
-		await updateSlashCommandsInGuild(guild, commands);
-	} else {
-		await client.guilds.fetch();
-		console.log("amount of guilds", client.guilds.cache.size);
-		for (let guild of client.guilds.cache.values()) {
-			await updateSlashCommandsInGuild(guild, commands);
-		}
-		console.log("[CLIENT] Updated slash commands.")
-	}
-}
-
-async function updateSlashCommandsInGuild(guild: Discord.Guild, commands: any[]) {
-	//refresh commands of guild
-	// console.log(guild.id);
-	try {
-		await guild.commands.fetch();
-		for (let command of guild.commands.cache.values()) {
-			// remove outdated commands
-			let found: boolean = false;
-			for (let i of data.interactions.values()) {
-				if (i.data?.name == command.name) {
-					found = true;
-					break;
-				}
-			}
-			if (!found) {
-				await guild.commands.delete(command.id);
-			}
-		}
-		// add/update commands
-		for (let command of commands) {
-			await guild.commands.create(command);
-		}
-	} catch (error) {
-		console.error(error);
 	}
 }
 
