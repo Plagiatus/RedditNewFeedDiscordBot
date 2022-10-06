@@ -166,6 +166,7 @@ async function cleanUpCachedPosts() {
 export async function sendStatusMessage(title: string, message: string, thumbURL?: string, imageURL?: string) {
 	let allSubscriptions: SubscriptionInfo[] = await db.getSubscriptions();
 	let sentChannels: string[] = [];
+	console.log("Sending PSA:", title);
 	for (let subscription of allSubscriptions) {
 		for (let guildAndChannel of subscription.guilds) {
 			if (sentChannels.includes(guildAndChannel.channel)) continue;
@@ -193,6 +194,7 @@ export async function sendStatusMessage(title: string, message: string, thumbURL
 			}
 		}
 	}
+	console.log("Sending PSA: done.");
 }
 
 export function setActivity(type: Discord.ActivityType, name: string) {
