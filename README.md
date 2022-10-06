@@ -9,7 +9,7 @@ A discord.js bot that properly reads the /new feed of a given subreddit and post
 ## Invite to your Discord
 You can invite the bot to your own discord server by clicking [here](https://discord.com/oauth2/authorize?client_id=900766304628244490&scope=applications.commands%20bot&permissions=51200).
 
-~~The owner as well as all roles with either global "manage channels", "manage server", or "administrator" permission will be able to manage the bot.~~  
+Anyone with the `Administrator` permission has access to the `/reddit` command by default.  
 Discord added proper management of bot permissions, so you can change who can use what commands in what channel yourself under `Server Settings > Integrations > RedditNewFeed`.
 
 ## Improvements

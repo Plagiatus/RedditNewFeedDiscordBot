@@ -7,6 +7,8 @@ module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('reddit')
 		.setDescription('Manages the reddit feed.')
+		.setDMPermission(false)
+		.setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
 		.addSubcommand((command) =>
 			command.setName("add").setDescription("Adds a reddits new feed to a selected channel.")
 				.addStringOption((option) => option.setName("subreddit").setDescription("The subreddit to get a feed from").setRequired(true))
