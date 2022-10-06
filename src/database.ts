@@ -4,9 +4,11 @@ import { grabInitialPosts } from "./util";
 
 export class Database {
 	static instance: Database | null;
-	private client!: Mongo.MongoClient;
-	private connected!: boolean;
-	private data = new Data();
+	protected client!: Mongo.MongoClient;
+	protected connected!: boolean;
+	protected data = new Data();
+	private subInfoCollection!: Mongo.Collection;
+	private botStatsCollection!: Mongo.Collection;
 	constructor() {
 		if (Database.instance) return Database.instance;
 		let options: Mongo.MongoClientOptions = {};
@@ -25,10 +27,9 @@ export class Database {
 		this.connected = false;
 
 		Database.instance = this;
-	}
 
-	private getCollection(name: string = "subscriptionInfo"): Mongo.Collection {
-		return this.client.db(this.data.config.db.name).collection(name);
+		this.subInfoCollection = this.client.db(this.data.config.db.name).collection("subscriptionInfo");
+		this.botStatsCollection = this.client.db(this.data.config.db.name).collection("botStatistics");
 	}
 
 	async getAllCollections(): Promise<Mongo.Collection[]> {
@@ -43,23 +44,23 @@ export class Database {
 	}
 
 	async getSubscriptions(): Promise<SubscriptionInfo[]> {
-		let collection = this.getCollection();
+		let collection = this.subInfoCollection;
 		return collection.find().toArray() as Promise<SubscriptionInfo[]>;
 	}
 	async getSubscriptionsOfSubreddit(subreddit: string): Promise<SubscriptionInfo> {
-		let collection = this.getCollection();
-		return collection.findOne({subreddit}) as Promise<SubscriptionInfo>;
+		let collection = this.subInfoCollection;
+		return collection.findOne({ subreddit }) as Promise<SubscriptionInfo>;
 	}
 
 	async getSubscriptionsInGuild(guild: string): Promise<SubscriptionInfo[]> {
-		let collection = this.getCollection();
+		let collection = this.subInfoCollection;
 		return collection.find({ guilds: { $elemMatch: { guild } } }).toArray() as Promise<SubscriptionInfo[]>;
 	}
 
 	async addSubscription(guild: string, channel: string, subreddit: string): Promise<void> {
 		subreddit = subreddit.toLowerCase();
 		let gs: GuildSubscription = { channel, guild };
-		let collection = this.getCollection();
+		let collection = this.subInfoCollection;
 		let result = await collection.findOne({ subreddit, guilds: { $elemMatch: { guild } } });
 		if (result) {
 			return;
@@ -84,7 +85,7 @@ export class Database {
 
 	async removeSubscription(guild: string, subreddit: string): Promise<void> {
 		subreddit = subreddit.toLowerCase();
-		let collection = this.getCollection();
+		let collection = this.subInfoCollection;
 
 		await collection.updateOne(
 			{ subreddit, guilds: { $elemMatch: { guild } } },
@@ -107,14 +108,14 @@ export class Database {
 		}
 		this.client.db(this.data.config.db.name).dropCollection(subreddit, (err, res) => { });
 	}
-	
-	async removeCollection(name: string){
+
+	async removeCollection(name: string) {
 		this.client.db(this.data.config.db.name).dropCollection(name, (err, res) => { });
 	}
 
 	async doesSubscriptionAlreadyExist(guild: string, subreddit: string): Promise<boolean> {
 		subreddit = subreddit.toLowerCase();
-		let collection = this.getCollection();
+		let collection = this.subInfoCollection;
 		let document = await collection.findOne({
 			subreddit,
 			guilds: { $elemMatch: { guild } }
@@ -125,51 +126,59 @@ export class Database {
 
 	async wasPostAlreadyPosted(subreddit: string, post: Post): Promise<boolean> {
 		subreddit = subreddit.toLowerCase();
-		let collection = this.getCollection(subreddit);
+		let collection = this.subInfoCollection;
 		let posted = await collection.updateOne(
-			{ post: post.data.id },
+			{ subreddit: subreddit, posts: { $nin: [post.data.id] } },
 			{
-				$set: {
-					post: post.data.id
+				$push: {
+					posts: post.data.id
 				}
-			},
-			{ upsert: true }
+			}
 		);
-		if (posted.upsertedCount > 0) return false;
+		if (posted.modifiedCount > 0) return false;
 		return true;
 	}
 
 	async addPostsToDB(subreddit: string, posts: Post[]) {
 		subreddit = subreddit.toLowerCase();
-		let collection = this.getCollection(subreddit);
+		let collection = this.subInfoCollection;
 
-		let postsToInsert: { post: string }[] = [];
+		let postsToInsert: string[] = [];
 		for (let post of posts) {
-			postsToInsert.push({ post: post.data.id });
+			postsToInsert.push(post.data.id);
 		}
 		if (postsToInsert.length == 0) {
-			postsToInsert.push({ post: "00000" });
+			postsToInsert.push("00000");
 		}
 
-		collection.insertMany(postsToInsert);
+		collection.updateOne(
+			{ subreddit },
+			{
+				$set: {
+					posts: postsToInsert
+				}
+			}
+		);
 	}
 
 	// Cache clearing
 	async cleanCache(subreddit: string) {
+		const maxCacheSize = 50;
 		subreddit = subreddit.toLowerCase();
-		let collection = this.getCollection(subreddit);
-		let size: number = await collection.find().count();
-		if (size <= 50) return;
-		let elementsToRemove = await collection.find().sort({ _id: "asc" }).limit(size - 50).toArray();
-		for (let el of elementsToRemove) {
-			collection.deleteOne({ _id: el._id });
-		}
+		let collection = this.subInfoCollection;
+		let subInfo: SubscriptionInfo = await this.getSubscriptionsOfSubreddit(subreddit);
+		if (subInfo.posts.length <= maxCacheSize) return;
+		subInfo.posts.splice(0, subInfo.posts.length - maxCacheSize);
+		collection.updateOne(
+			{ subreddit },
+			{ $set: { posts: subInfo.posts } }
+		)
 	}
 
 	// amount of posted messages
 	async addToTotalMessages(subreddit: string, n: number = 1) {
 		subreddit = subreddit.toLowerCase();
-		let collection = this.getCollection("botStatistics");
+		let collection = this.botStatsCollection;
 		collection.updateOne(
 			{ subreddit },
 			{
@@ -181,22 +190,25 @@ export class Database {
 		)
 	}
 
+	/** 
+	 * @deprecated 
+	 */
 	async getTotalPostsInSubreddit(subreddit: string): Promise<number> {
-		let collection = this.getCollection(subreddit);
+		let collection = this.subInfoCollection;
 		return collection.find().count();
 	}
 
 	// STATS
 	async amountDiscordServers(): Promise<number> {
-		let collection = this.getCollection();
+		let collection = this.subInfoCollection;
 		return (await collection.distinct("guilds")).length;
 	}
 	async amountSubreddits(): Promise<number> {
-		let collection = this.getCollection();
+		let collection = this.subInfoCollection;
 		return collection.find().count();
 	}
 	async amountPosts(): Promise<string> {
-		let collection = this.getCollection("botStatistics");
+		let collection = this.botStatsCollection;
 		let result = await collection.aggregate([{
 			$group: {
 				_id: 1,
@@ -210,10 +222,10 @@ export class Database {
 		}]).toArray();
 
 		let num: number = result[0].all;
-		if(num > 1000000){
+		if (num > 1000000) {
 			return (num / 1000000).toFixed(1) + "M";
 		}
-		if(num > 1000){
+		if (num > 1000) {
 			return (num / 1000).toFixed(1) + "k";
 		}
 		return num.toString();

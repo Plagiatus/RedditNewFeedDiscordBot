@@ -24,7 +24,8 @@ interface BotInteraction {
 
 interface SubscriptionInfo {
 	subreddit: string,
-	guilds: GuildSubscription[]
+	guilds: GuildSubscription[],
+	posts: string[],
 }
 
 interface GuildSubscription {
