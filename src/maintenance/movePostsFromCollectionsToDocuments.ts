@@ -53,8 +53,10 @@ class DatabaseMigrator extends Database {
 
 async function run() {
     const dbm = new DatabaseMigrator();
+    console.log("Starting Migration...");
     await dbm.connect();
-    dbm.movePostsFromCollectionsToDocuments();
+    await dbm.movePostsFromCollectionsToDocuments();
+    console.log("Done with the migration!");
 }
 
 run();
