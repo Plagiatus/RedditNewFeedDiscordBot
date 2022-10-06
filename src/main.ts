@@ -3,12 +3,11 @@ import { Database } from "./database";
 import * as Discord from "discord.js";
 import { checkForNewPosts, fixImageUrl, getSubreddit, getSubredditInfo, getUser, getUserInfo, postEmbed } from "./util";
 import HttpServer from "./httpserver";
-import { ActivityTypes } from "discord.js/typings/enums";
 
 
 export const data = new Data();
 export const db = new Database();
-export const client = new Discord.Client({ intents: [Discord.Intents.FLAGS.GUILDS] });
+export const client = new Discord.Client({ intents: [Discord.GatewayIntentBits.Guilds] });
 export const server = new HttpServer(9002);
 
 client.on("ready", () => { console.log("[CLIENT] connected") });
@@ -19,22 +18,22 @@ client.on("guildDelete", handleGuildLeave);
 async function start() {
 	await db.connect();
 	await client.login(data.config.botToken);
-	await updateSlashCommands();
+	// await updateSlashCommands();
 
 	setInterval(updateRedditFeeds, data.config.refreshIntervall * 60 * 1000);
 	updateRedditFeeds();
 	cleanUpCachedPosts();
-	setActivity(ActivityTypes.WATCHING, `${await db.amountSubreddits()} subreddits`);
+	setActivity(Discord.ActivityType.Watching, `${await db.amountSubreddits()} subreddits`);
 }
 start();
 
 async function handleInteraction(interaction: Discord.Interaction) {
-	if (interaction.isCommand()) handleCommand(interaction);
+	if (interaction.isChatInputCommand()) handleCommand(interaction);
 	else if (interaction.isButton()) handleButton(interaction);
 
 }
 
-async function handleCommand(interaction: Discord.CommandInteraction) {
+async function handleCommand(interaction: Discord.ChatInputCommandInteraction) {
 	let commandName: string = interaction.commandName;
 	if (!data.interactions.has(commandName)) return;
 	try {
@@ -114,11 +113,11 @@ async function updateRedditFeeds() {
 		let newPosts: Post[] = await checkForNewPosts(subscription.subreddit);
 		if (newPosts.length == 0) continue;
 		for (let guildAndChannel of subscription.guilds) {
-			let channel: Discord.AnyChannel | null;
+			let channel: Discord.Channel | null;
 			try {
 				channel = await client.channels.fetch(guildAndChannel.channel);
 				if (!channel) continue;
-				if (!channel.isText()) continue;
+				if (channel.type != Discord.ChannelType.GuildText) continue;
 			} catch (error) {
 				console.error("[ERROR] Couldn't get channel, removing subscription.");
 				db.removeSubscription(guildAndChannel.guild, subscription.subreddit);
@@ -126,10 +125,10 @@ async function updateRedditFeeds() {
 			}
 			try {
 				let botPermissions = (<Discord.TextChannel>channel).permissionsFor(client.user?.id || "");
-				if (!botPermissions || !botPermissions.has("SEND_MESSAGES") || !botPermissions.has("VIEW_CHANNEL")) continue;
+				if (!botPermissions || !botPermissions.has(Discord.PermissionFlagsBits.SendMessages) || !botPermissions.has(Discord.PermissionFlagsBits.ViewChannel)) continue;
 
 				for (let post of newPosts) {
-					let embed: Discord.MessageEmbed = postEmbed(post, await getUser(post.data.author, redditUserCache), await getSubreddit(post.data.subreddit, subredditInfoCache));
+					let embed: Discord.EmbedBuilder = postEmbed(post, await getUser(post.data.author, redditUserCache), await getSubreddit(post.data.subreddit, subredditInfoCache));
 					await channel.send({ embeds: [embed] });
 				}
 			} catch (error) {
@@ -152,7 +151,7 @@ async function handleGuildLeave(guild: Discord.Guild) {
 
 function handleGuildJoin(guild: Discord.Guild) {
 	console.log("[GUILD] Joined:", guild.name);
-	updateSlashCommands(guild);
+	// updateSlashCommands(guild);
 }
 
 
@@ -174,12 +173,12 @@ export async function sendStatusMessage(title: string, message: string, thumbURL
 			try {
 				let channel = await client.channels.fetch(guildAndChannel.channel);
 				if (!channel) continue;
-				if (!channel.isText()) continue;
+				if (channel.type != Discord.ChannelType.GuildText) continue;
 
 				let botPermissions = (<Discord.TextChannel>channel).permissionsFor(client.user?.id || "");
-				if (!botPermissions || !botPermissions.has("SEND_MESSAGES") || !botPermissions.has("VIEW_CHANNEL")) continue;
+				if (!botPermissions || !botPermissions.has(Discord.PermissionFlagsBits.SendMessages) || !botPermissions.has(Discord.PermissionFlagsBits.ViewChannel)) continue;
 
-				let embed: Discord.MessageEmbed = new Discord.MessageEmbed().setTitle(title || "RedditNewFeedBot Information").setDescription(message);
+				let embed: Discord.EmbedBuilder = new Discord.EmbedBuilder().setTitle(title || "RedditNewFeedBot Information").setDescription(message);
 				if (imageURL) {
 					embed.setImage(imageURL);
 				}
@@ -196,8 +195,8 @@ export async function sendStatusMessage(title: string, message: string, thumbURL
 	}
 }
 
-export function setActivity(type: ActivityTypes, name: string) {
-	if (type == ActivityTypes.CUSTOM) {
+export function setActivity(type: Discord.ActivityType, name: string) {
+	if (type === Discord.ActivityType.Custom) {
 		client.user?.setActivity({ name })
 	} else {
 		client.user?.setActivity({ name, type })

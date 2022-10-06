@@ -102,7 +102,7 @@ export async function getSubreddit(name: string, cache: Map<string, SubredditInf
 	return newSub;
 }
 
-export function postEmbed(post: Post, user?: RedditUser, subreddit?: SubredditInfo): Discord.MessageEmbed {
+export function postEmbed(post: Post, user?: RedditUser, subreddit?: SubredditInfo): Discord.EmbedBuilder {
 	let userImage: string | undefined = fixImageUrl(user?.data.icon_img);
 	let subredditImage: string | undefined = fixImageUrl(subreddit?.data.community_icon);
 	let flairText: string = "";
@@ -115,7 +115,7 @@ export function postEmbed(post: Post, user?: RedditUser, subreddit?: SubredditIn
 		flairText = "[" + flairText + "] "
 	}
 
-	let embed = new Discord.MessageEmbed()
+	let embed = new Discord.EmbedBuilder()
 		.setTitle(`${flairText}${post.data.title}`.substring(0, 256))
 		.setURL(`https://redd.it/${post.data.id}`)
 		.setAuthor({ name: post.data.author, iconURL: userImage, url: "https://reddit.com/u/" + post.data.author })

@@ -19,8 +19,6 @@ export class Data {
 			const command: BotInteraction = require(__dirname + `/interactions/${file}`);
 			if (command.type == "COMMAND" && command.data) {
 				botInteractions.set(command.data.name, command);
-			} else if (command.type == "BUTTON" && command.button) {
-				botInteractions.set(command.button.customId as string, command);
 			}
 		}
 

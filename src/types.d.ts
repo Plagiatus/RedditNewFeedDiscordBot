@@ -9,13 +9,14 @@ interface Config {
 	},
 	refreshIntervall: number,
 	psaAuth: string,
+	clientId: string,
 }
 
 type SlashCommandBuilder = import("@discordjs/builders").SlashCommandBuilder;
-type MessageButton = import("discord.js").MessageButton;
+type ButtonBuilder = import("discord.js").ButtonBuilder;
 interface BotInteraction {
 	data?: SlashCommandBuilder,
-	button?: MessageButton,
+	button?: ButtonBuilder,
 	execute: Function,
 	defaultPermission: boolean,
 	type: "BUTTON" | "COMMAND"

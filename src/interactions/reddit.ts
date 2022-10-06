@@ -1,8 +1,7 @@
-import { Channel, CommandInteraction, MessageEmbed } from "discord.js"
+import { ActivityType, ChannelType, ChatInputCommandInteraction, EmbedBuilder, PermissionFlagsBits, TextChannel } from "discord.js"
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { sendRedditRequest, subredditUrl } from "../util";
 import { client, db, setActivity } from "../main";
-import { ActivityTypes } from "discord.js/typings/enums";
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -21,7 +20,7 @@ module.exports = {
 			command.setName("list").setDescription("Show all subreddit feeds on this server.")
 		)
 	,
-	async execute(interaction: CommandInteraction) {
+	async execute(interaction: ChatInputCommandInteraction) {
 		let subcommand: string = interaction.options.getSubcommand();
 		let functionToExecute = subcommands.get(subcommand);
 		if (!functionToExecute) {
@@ -37,7 +36,7 @@ module.exports = {
 
 const subcommands: Map<string, SubcommandFunction> = new Map<string, SubcommandFunction>();
 
-async function add(interaction: CommandInteraction) {
+async function add(interaction: ChatInputCommandInteraction) {
 	let subreddit: string | null = interaction.options.getString("subreddit");
 	let channel = interaction.options.getChannel("channel");
 
@@ -49,13 +48,13 @@ async function add(interaction: CommandInteraction) {
 		await interaction.editReply({ content: "ERRROR: Channel option hasn't been filled." });
 		return;
 	}
-	if (channel.type != "GUILD_TEXT") {
+	if (channel.type != ChannelType.GuildText) {
 		await interaction.editReply({ content: "ERRROR: Channel needs to be a normal text channel." });
 		return;
 	}
 
-	let botPermissions = channel.permissionsFor(client.user?.id || "");
-	if (!botPermissions || !botPermissions.has("SEND_MESSAGES") || !botPermissions.has("VIEW_CHANNEL")) {
+	let botPermissions = (<TextChannel>channel).permissionsFor(client.user?.id || "");
+	if (!botPermissions || !botPermissions.has(PermissionFlagsBits.SendMessages) || !botPermissions.has(PermissionFlagsBits.ViewChannel)) {
 		await interaction.editReply({ content: "ERROR: I have no permission to send messages in that channel." });
 		return;
 	}
@@ -77,12 +76,12 @@ async function add(interaction: CommandInteraction) {
 		await interaction.editReply({ content: `Success! I'll now post new submissions from **r/${subreddit}** to ${channel}.` });
 	}
 	await db.addSubscription(interaction.guildId, channel.id, subreddit);
-	setActivity(ActivityTypes.WATCHING, `${await db.amountSubreddits()} subreddits`);
+	setActivity(ActivityType.Watching, `${await db.amountSubreddits()} subreddits`);
 }
 subcommands.set("add", add);
 
 
-async function remove(interaction: CommandInteraction) {
+async function remove(interaction: ChatInputCommandInteraction) {
 	let subreddit: string | null = interaction.options.getString("subreddit");
 	if (!subreddit) {
 		await interaction.editReply({ content: "**ERROR**: Subreddit option hasn't been filled." });
@@ -100,11 +99,11 @@ async function remove(interaction: CommandInteraction) {
 	}
 	interaction.editReply({ content: `Subreddit feed from **${subreddit}** has been successfully removed.` });
 	await db.removeSubscription(interaction.guildId, subreddit);
-	setActivity(ActivityTypes.WATCHING, `${await db.amountSubreddits()} subreddits`);
+	setActivity(ActivityType.Watching, `${await db.amountSubreddits()} subreddits`);
 }
 subcommands.set("remove", remove);
 
-async function list(interaction: CommandInteraction) {
+async function list(interaction: ChatInputCommandInteraction) {
 	if (!interaction.guildId) {
 		interaction.editReply({ content: "**ERROR**: Discord server not found." });
 		return;
@@ -114,27 +113,27 @@ async function list(interaction: CommandInteraction) {
 		interaction.editReply({ content: "There are **no feeds** linked to this discord server." })
 		return;
 	}
-	let embed: MessageEmbed = new MessageEmbed()
+	let embed: EmbedBuilder = new EmbedBuilder()
 		.setTitle("List of linked feeds")
 		.setDescription(`There are **${subscriptions.length}** feeds linked to this discord server:`);
 	for (let sub of subscriptions) {
 		try {
 			let channel = await interaction.guild?.channels.fetch(sub.guilds.find(g => g.guild == interaction.guildId)?.channel || "");
 			if (!channel) {
-				embed.addField(`r/${sub.subreddit}`, "_invalid channel_", true);
+				embed.addFields({ name: `r/${sub.subreddit}`, value: "_invalid channel_", inline: true });
 				continue;
 			}
 
 			let botPermissions = channel.permissionsFor(client.user?.id || "");
-			if (!botPermissions || !botPermissions.has("SEND_MESSAGES") || !botPermissions.has("VIEW_CHANNEL")) {
-				embed.addField(`r/${sub.subreddit}`, `${channel.toString()}\n_no permission_`, true);
+			if (!botPermissions || !botPermissions.has(PermissionFlagsBits.SendMessages) || !botPermissions.has(PermissionFlagsBits.ViewChannel)) {
+				embed.addFields({ name: `r/${sub.subreddit}`, value: `${channel.toString()}\n_no permission_`, inline: true });
 				continue;
 			}
 
-			embed.addField(`r/${sub.subreddit}`, channel.toString(), true);
+			embed.addFields({ name: `r/${sub.subreddit}`, value: channel.toString(), inline: true });
 
 		} catch (error) {
-			embed.addField(`r/${sub.subreddit}`, "_invalid channel_", true);
+			embed.addFields({ name: `r/${sub.subreddit}`, value: "_invalid channel_", inline: true });
 
 		}
 	}
@@ -142,4 +141,4 @@ async function list(interaction: CommandInteraction) {
 }
 subcommands.set("list", list);
 
-type SubcommandFunction = (interaction: CommandInteraction) => void;
+type SubcommandFunction = (interaction: ChatInputCommandInteraction) => void;
