@@ -1,7 +1,7 @@
 import { Data } from "./data";
 import { Database } from "./database";
 import * as Discord from "discord.js";
-import { checkForNewPosts, fixImageUrl, getSubreddit, getSubredditInfo, getUser, getUserInfo, postEmbed } from "./util";
+import { checkForNewPosts, fixImageUrl, getSubreddit, getSubredditInfo, getUser, getUserInfo, postEmbed, resetInfoCache } from "./util";
 import HttpServer from "./httpserver";
 
 
@@ -55,38 +55,40 @@ async function handleButton(interaction: Discord.ButtonInteraction) {
 }
 
 async function updateRedditFeeds() {
-	let redditUserCache: Map<string, RedditUser> = new Map<string, RedditUser>();
-	let subredditInfoCache: Map<string, SubredditInfo> = new Map<string, SubredditInfo>();
 	let allSubscriptions: SubscriptionInfo[] = await db.getSubscriptions();
 	for (let subscription of allSubscriptions) {
-		let newPosts: Post[] = await checkForNewPosts(subscription.subreddit);
-		if (newPosts.length == 0) continue;
-		for (let guildAndChannel of subscription.guilds) {
-			let channel: Discord.Channel | null;
-			try {
-				channel = await client.channels.fetch(guildAndChannel.channel);
-				if (!channel) continue;
-				if (channel.type != Discord.ChannelType.GuildText) continue;
-			} catch (error) {
-				console.error("[ERROR] Couldn't get channel, removing subscription.");
-				db.removeSubscription(guildAndChannel.guild, subscription.subreddit);
-				continue;
-			}
-			try {
-				let botPermissions = (<Discord.TextChannel>channel).permissionsFor(client.user?.id || "");
-				if (!botPermissions || !botPermissions.has(Discord.PermissionFlagsBits.SendMessages) || !botPermissions.has(Discord.PermissionFlagsBits.ViewChannel)) continue;
-
-				for (let post of newPosts) {
-					let embed: Discord.EmbedBuilder = postEmbed(post, await getUser(post.data.author, redditUserCache), await getSubreddit(post.data.subreddit, subredditInfoCache));
-					await channel.send({ embeds: [embed] });
-				}
-			} catch (error) {
-				console.error(error);
-				continue;
-			}
-		}
-		db.addToTotalMessages(subscription.subreddit, newPosts.length);
+		checkOneSubscription(subscription);
 	}
+}
+
+async function checkOneSubscription(subscription: SubscriptionInfo) {
+	let newPosts: Post[] = await checkForNewPosts(subscription.subreddit);
+	if (newPosts.length == 0) return;
+	for (let guildAndChannel of subscription.guilds) {
+		let channel: Discord.Channel | null;
+		try {
+			channel = await client.channels.fetch(guildAndChannel.channel);
+			if (!channel) continue;
+			if (channel.type != Discord.ChannelType.GuildText) throw new Error();
+		} catch (error) {
+			console.error("[ERROR] Couldn't get channel, removing subscription.");
+			db.removeSubscription(guildAndChannel.guild, subscription.subreddit);
+			continue;
+		}
+		try {
+			let botPermissions = (<Discord.TextChannel>channel).permissionsFor(client.user?.id || "");
+			if (!botPermissions || !botPermissions.has(Discord.PermissionFlagsBits.SendMessages) || !botPermissions.has(Discord.PermissionFlagsBits.ViewChannel)) continue;
+
+			for (let post of newPosts) {
+				let embed: Discord.EmbedBuilder = postEmbed(post, await getUser(post.data.author), await getSubreddit(post.data.subreddit));
+				await channel.send({ embeds: [embed] });
+			}
+		} catch (error) {
+			console.error(error);
+			continue;
+		}
+	}
+	db.addToTotalMessages(subscription.subreddit, newPosts.length);
 }
 
 
@@ -106,9 +108,10 @@ function handleGuildJoin(guild: Discord.Guild) {
 
 async function cleanUpCachedPosts() {
 	setTimeout(cleanUpCachedPosts, 1000 * 60 * 60 * 24);
+	resetInfoCache();
 	let subscriptions: SubscriptionInfo[] = await db.getSubscriptions();
 	for (let subscription of subscriptions) {
-		db.cleanCache(subscription.subreddit);
+		db.cleanCache(subscription);
 	}
 }
 

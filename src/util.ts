@@ -25,7 +25,7 @@ export async function sendRedditRequest(url: string): Promise<any> {
 			if (res.statusCode && (res.statusCode < 200 || res.statusCode >= 300)) {
 				console.error("Response returned non-2xx Status code:", res.statusCode, res.statusMessage, url);
 				reject("Response returned non-2xx Status code: " + res.statusCode + " " + res.statusMessage + ": " + url);
-				if(res.statusCode == 404) {
+				if(res.statusCode == 404 || res.statusCode == 403) {
 					removeSubscriptions(url);
 				}
 			}
@@ -83,23 +83,31 @@ export function fixImageUrl(url: string | undefined): string | undefined {
 }
 
 
-export async function getUser(name: string, cache: Map<string, RedditUser>): Promise<RedditUser> {
-	let cachedResult: RedditUser | undefined = cache.get(name);
+let redditUserCache: Map<string, RedditUser> = new Map<string, RedditUser>();
+export async function getUser(name: string): Promise<RedditUser> {
+	let cachedResult: RedditUser | undefined = redditUserCache.get(name);
 	if (cachedResult)
 		return cachedResult;
 
 	let newUser = await getUserInfo(name);
-	cache.set(name, newUser);
+	redditUserCache.set(name, newUser);
 	return newUser;
 }
-export async function getSubreddit(name: string, cache: Map<string, SubredditInfo>): Promise<SubredditInfo> {
-	let cachedResult: SubredditInfo | undefined = cache.get(name);
+
+let subredditInfoCache: Map<string, SubredditInfo> = new Map<string, SubredditInfo>();
+export async function getSubreddit(name: string): Promise<SubredditInfo> {
+	let cachedResult: SubredditInfo | undefined = subredditInfoCache.get(name);
 	if (cachedResult)
 		return cachedResult;
 
 	let newSub = await getSubredditInfo(name);
-	cache.set(name, newSub);
+	subredditInfoCache.set(name, newSub);
 	return newSub;
+}
+
+export function resetInfoCache(){
+	redditUserCache = new Map<string, RedditUser>();
+	subredditInfoCache = new Map<string, SubredditInfo>();
 }
 
 export function postEmbed(post: Post, user?: RedditUser, subreddit?: SubredditInfo): Discord.EmbedBuilder {

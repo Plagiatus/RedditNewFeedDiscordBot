@@ -162,15 +162,14 @@ export class Database {
 	}
 
 	// Cache clearing
-	async cleanCache(subreddit: string) {
+	async cleanCache(subInfo: SubscriptionInfo) {
 		const maxCacheSize = 50;
-		subreddit = subreddit.toLowerCase();
 		let collection = this.subInfoCollection;
-		let subInfo: SubscriptionInfo = await this.getSubscriptionsOfSubreddit(subreddit);
-		if (subInfo.posts.length <= maxCacheSize) return;
+		if (!subInfo.posts) { subInfo.posts = [] }
+		else if (subInfo.posts.length <= maxCacheSize) return;
 		subInfo.posts.splice(0, subInfo.posts.length - maxCacheSize);
 		collection.updateOne(
-			{ subreddit },
+			{ subreddit: subInfo.subreddit },
 			{ $set: { posts: subInfo.posts } }
 		)
 	}
