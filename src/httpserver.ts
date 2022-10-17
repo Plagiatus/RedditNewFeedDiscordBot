@@ -12,6 +12,7 @@ export default class HttpServer {
 	}
 
 	private async handleRequest(req: http.IncomingMessage, res: http.OutgoingMessage) {
+		req.on("close", ()=>{res.end(); console.log("request close fallback")})
 		res.setHeader("Access-Control-Allow-Origin", "*");
 		res.setHeader("content-type", "application/json");
 
