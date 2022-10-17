@@ -54,6 +54,11 @@ async function add(interaction: ChatInputCommandInteraction) {
 		await interaction.editReply({ content: "ERRROR: Channel needs to be a normal text channel." });
 		return;
 	}
+	let matched = subreddit.match(/[a-zA-Z0-9-_]+/g)?.[0] ?? "";
+	if (subreddit.length != matched.length){
+		await interaction.editReply({ content: "ERRROR: Invalid subreddit name." });
+		return;
+	}
 
 	let botPermissions = (<TextChannel>channel).permissionsFor(client.user?.id || "");
 	if (!botPermissions || !botPermissions.has(PermissionFlagsBits.SendMessages) || !botPermissions.has(PermissionFlagsBits.ViewChannel)) {

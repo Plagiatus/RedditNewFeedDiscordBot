@@ -148,6 +148,7 @@ async function removeSubscriptions(subreddit: string){
 	subreddit = subreddit.split(/[\.\/]/g)[0];
 	console.log("[ERROR] have to remove subscriptions to: ", subreddit);
 	let si = await db.getSubscriptionsOfSubreddit(subreddit);
+	if(!si) return;
 	for(let guild of si.guilds){
 		await db.removeSubscription(guild.guild, subreddit);
 	}
