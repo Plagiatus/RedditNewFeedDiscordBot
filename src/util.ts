@@ -58,14 +58,19 @@ export async function checkForNewPosts(sub: string): Promise<Post[]> {
 		}
 		return newPosts;
 	} catch (error) {
+		console.error(error);
 		return [];
 		//TODO: remove subreddit from subscriptions
 	}
 }
 
 export async function grabInitialPosts(sub: string) {
-	let posts: Post[] = (await sendRedditRequest(newPostUrl(sub))).data.children;
-	db.addPostsToDB(sub, posts);
+	try {
+		let posts: Post[] = (await sendRedditRequest(newPostUrl(sub))).data.children;
+		db.addPostsToDB(sub, posts);
+	} catch (error) {
+		console.error(error);
+	}
 }
 
 export async function getUserInfo(name: string): Promise<RedditUser> {
@@ -146,7 +151,7 @@ async function removeSubscriptions(subreddit: string){
 	if(!subreddit.startsWith("https://www.reddit.com/r/")) return;
 	subreddit = subreddit.substring(25);
 	subreddit = subreddit.split(/[\.\/]/g)[0];
-	console.log("[ERROR] have to remove subscriptions to: ", subreddit);
+	console.log("[ERROR] have to remove subscriptions to:", subreddit);
 	let si = await db.getSubscriptionsOfSubreddit(subreddit);
 	if(!si) return;
 	for(let guild of si.guilds){
