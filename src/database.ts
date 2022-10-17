@@ -200,7 +200,30 @@ export class Database {
 	// STATS
 	async amountDiscordServers(): Promise<number> {
 		let collection = this.subInfoCollection;
-		return (await collection.distinct("guilds")).length;
+		// return (await collection.distinct("guilds")).length;
+		let result = await (await collection.aggregate(
+			[
+				{
+				  '$project': {
+					'g': '$guilds.guild'
+				  }
+				}, {
+				  '$unwind': {
+					'path': '$g', 
+					'preserveNullAndEmptyArrays': false
+				  }
+				}, {
+				  '$group': {
+					'_id': 'blabla', 
+					'guilds': {
+					  '$addToSet': '$g'
+					}
+				  }
+				}
+			  ]
+		)).next();
+
+		return result?.guilds.length ?? 0;
 	}
 	async amountSubreddits(): Promise<number> {
 		let collection = this.subInfoCollection;

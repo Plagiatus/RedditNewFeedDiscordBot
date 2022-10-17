@@ -71,7 +71,7 @@ export default class HttpServer {
 
 	private async shieldJoinAmount(req: http.IncomingMessage, res: http.OutgoingMessage) {
 		let total = await db.amountDiscordServers();
-		res.write(JSON.stringify(makeShieldResponse(total.toString(), "Joined discord servers")))
+		res.write(JSON.stringify(makeShieldResponse(total.toString(), "Discord servers with subscriptions")))
 	}
 	private async shieldSubredditAmount(req: http.IncomingMessage, res: http.OutgoingMessage) {
 		let total = await db.amountSubreddits();
