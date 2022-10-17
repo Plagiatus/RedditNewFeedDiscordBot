@@ -5,31 +5,36 @@ import { db } from "./main";
 
 export async function sendRedditRequest(url: string): Promise<any> {
 	return new Promise((resolve, reject) => {
-		https.get(url, (res) => {
-			let data = "";
-
-			res.on("data", d => {
-				data += d;
-			});
-			res.on("end", () => {
-				try {
-					resolve(JSON.parse(data));
-				} catch (error) {
-					reject(data);
+		try {
+			https.get(url, (res) => {
+				let data = "";
+	
+				res.on("data", d => {
+					data += d;
+				});
+				res.on("end", () => {
+					try {
+						resolve(JSON.parse(data));
+					} catch (error) {
+						reject(data);
+					}
+				});
+				res.on("error", (e) => {
+					console.error(e);
+					reject();
+				});
+				if (res.statusCode && (res.statusCode < 200 || res.statusCode >= 300)) {
+					console.error("Response returned non-2xx Status code:", res.statusCode, res.statusMessage, url);
+					reject("Response returned non-2xx Status code: " + res.statusCode + " " + res.statusMessage + ": " + url);
+					if(res.statusCode == 404 || res.statusCode == 403) {
+						removeSubscriptions(url);
+					}
 				}
-			});
-			res.on("error", (e) => {
-				console.error(e);
-				reject();
-			});
-			if (res.statusCode && (res.statusCode < 200 || res.statusCode >= 300)) {
-				console.error("Response returned non-2xx Status code:", res.statusCode, res.statusMessage, url);
-				reject("Response returned non-2xx Status code: " + res.statusCode + " " + res.statusMessage + ": " + url);
-				if(res.statusCode == 404 || res.statusCode == 403) {
-					removeSubscriptions(url);
-				}
-			}
-		})
+			})
+		} catch (error) {
+			console.error(error);
+			reject();
+		}
 	});
 }
 
