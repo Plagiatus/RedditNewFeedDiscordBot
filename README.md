@@ -2,8 +2,8 @@
 A discord.js bot that properly reads the /new feed of a given subreddit and posts it into a selected channel
 
 [![Invite to discord](https://img.shields.io/static/v1?label=Discord&message=Invite%20to%20discord&style=flat-square&logo=discord&color=7289DA)](https://discord.com/api/oauth2/authorize?client_id=900766304628244490&scope=applications.commands%20bot&permissions=51200)  
-![Amount of discords served](https://img.shields.io/endpoint?url=https://redditbot.maptesting.de/shield/joinamount&style=flat-square&color=green&label=Joined%20discord%20servers)
-![Amount of discords served](https://img.shields.io/endpoint?url=https://redditbot.maptesting.de/shield/subredditamount&style=flat-square&color=informational&label=Watching%20subreddits)
+![Amount of Discord Servers with subscriptions](https://img.shields.io/endpoint?url=https://redditbot.maptesting.de/shield/joinamount&style=flat-square&color=green&label=Discord%20servers%20with%20subscriptions)
+![Amount of subreddits watched](https://img.shields.io/endpoint?url=https://redditbot.maptesting.de/shield/subredditamount&style=flat-square&color=informational&label=Watching%20subreddits)
 ![Amount of posts posted](https://img.shields.io/endpoint?url=https://redditbot.maptesting.de/shield/postamount&style=flat-square&color=informational&label=Posted%20posts)
 
 ## Invite to your Discord
