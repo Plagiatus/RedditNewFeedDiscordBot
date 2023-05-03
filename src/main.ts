@@ -118,7 +118,17 @@ async function cleanUpCachedPosts() {
 export async function sendStatusMessage(title: string, message: string, thumbURL?: string, imageURL?: string) {
 	let allSubscriptions: SubscriptionInfo[] = await db.getSubscriptions();
 	let sentChannels: string[] = [];
+	let sentGuilds: string[] = [];
 	console.log("Sending PSA:", title);
+	
+	let embed: Discord.EmbedBuilder = new Discord.EmbedBuilder().setTitle(title || "RedditNewFeedBot Information").setDescription(message);
+	if (imageURL) {
+		embed.setImage(imageURL);
+	}
+	if (thumbURL) {
+		embed.setThumbnail(thumbURL);
+	}
+
 	for (let subscription of allSubscriptions) {
 		for (let guildAndChannel of subscription.guilds) {
 			if (sentChannels.includes(guildAndChannel.channel)) continue;
@@ -131,15 +141,30 @@ export async function sendStatusMessage(title: string, message: string, thumbURL
 				let botPermissions = (<Discord.TextChannel>channel).permissionsFor(client.user?.id || "");
 				if (!botPermissions || !botPermissions.has(Discord.PermissionFlagsBits.SendMessages) || !botPermissions.has(Discord.PermissionFlagsBits.ViewChannel)) continue;
 
-				let embed: Discord.EmbedBuilder = new Discord.EmbedBuilder().setTitle(title || "RedditNewFeedBot Information").setDescription(message);
-				if (imageURL) {
-					embed.setImage(imageURL);
-				}
-				if (thumbURL) {
-					embed.setThumbnail(thumbURL);
-				}
+				await channel.send({ embeds: [embed] });
+				sentGuilds.push(guildAndChannel.guild);
+			} catch (error) {
+				console.log(error);
+				continue;
+			}
+		}
+	}
 
-				await channel.send({ embeds: [embed] })
+	await client.guilds.fetch();
+	let allGuilds = client.guilds.cache;
+	for(let guild of allGuilds){
+		if(sentGuilds.includes(guild[0])) continue;
+		let g = guild[1];
+		await g.channels.fetch();
+		let sent = false;
+		for(let channel of g.channels.cache.values()){
+			try {	
+				if (!channel) continue;
+				if (channel.type != Discord.ChannelType.GuildText) continue;
+				let botPermissions = (<Discord.TextChannel>channel).permissionsFor(client.user?.id || "");
+				if (!botPermissions || !botPermissions.has(Discord.PermissionFlagsBits.SendMessages) || !botPermissions.has(Discord.PermissionFlagsBits.ViewChannel)) continue;
+				await channel.send({ embeds: [embed] });
+				break;
 			} catch (error) {
 				console.log(error);
 				continue;
