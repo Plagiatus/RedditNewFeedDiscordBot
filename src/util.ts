@@ -6,7 +6,7 @@ import { db } from "./main";
 export async function sendRedditRequest(url: string): Promise<any> {
 	return new Promise((resolve, reject) => {
 		try {
-			https.get(url, (res) => {
+			https.get(url, {headers:{'User-Agent': 'discord:net.plagiatus.redditnewfeedbot (by /u/plagiatus)',}}, (res) => {
 				let data = "";
 	
 				res.on("data", d => {
